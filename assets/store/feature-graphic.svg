@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="500" viewBox="0 0 1024 500">
+<defs>
+<radialGradient id="bg" cx="30%" cy="45%" r="90%">
+<stop offset="0%" stop-color="#1a2350"/>
+<stop offset="55%" stop-color="#0e1330"/>
+<stop offset="100%" stop-color="#06060e"/>
+</radialGradient>
+<radialGradient id="core" cx="50%" cy="46%" r="55%">
+<stop offset="0%" stop-color="#fff6d0"/>
+<stop offset="35%" stop-color="#ffe040"/>
+<stop offset="75%" stop-color="#ff9a30"/>
+<stop offset="100%" stop-color="#ff6a3a"/>
+</radialGradient>
+<radialGradient id="glow" cx="50%" cy="50%" r="50%">
+<stop offset="0%" stop-color="#7ae0ff" stop-opacity="0.5"/>
+<stop offset="100%" stop-color="#7ae0ff" stop-opacity="0"/>
+</radialGradient>
+<linearGradient id="title" x1="0%" y1="0%" x2="100%" y2="0%">
+<stop offset="0%" stop-color="#6ab0ff"/>
+<stop offset="50%" stop-color="#ffe566"/>
+<stop offset="100%" stop-color="#ff6b9a"/>
+</linearGradient>
+</defs>
+<rect width="1024" height="500" fill="url(#bg)"/>
+<circle cx="160" cy="250" r="200" fill="none" stroke="#3a5aaa" stroke-width="2" opacity="0.2"/>
+<circle cx="160" cy="250" r="150" fill="url(#glow)"/>
+<g transform="translate(160,250) scale(0.52)">
+<path d="M0,-300 L74,-92 L290,-92 L112,36 L182,244 L0,110 L-182,244 L-112,36 L-290,-92 L-74,-92 Z" fill="url(#core)" stroke="#fff8e0" stroke-width="12" stroke-linejoin="round"/>
+<circle r="86" fill="#fff8e0"/>
+<circle r="86" fill="none" stroke="#3a9fff" stroke-width="16" opacity="0.85"/>
+</g>
+<text x="345" y="220" font-family="Arial, Segoe UI, sans-serif" font-weight="900" font-size="58" fill="url(#title)">AETHER SURGE</text>
+<text x="347" y="270" font-family="Arial, Segoe UI, sans-serif" font-weight="600" font-size="24" fill="#a8c8ff">Survive the swarms. Raise your power.</text>
+<text x="347" y="302" font-family="Arial, Segoe UI, sans-serif" font-weight="600" font-size="24" fill="#a8c8ff">Ascend.</text>
+<text x="347" y="355" font-family="Arial, Segoe UI, sans-serif" font-weight="700" font-size="21" fill="#7aa8dd">A fast, free-to-play survivor roguelike RPG</text>
+</svg>

@@ -1,0 +1,13 @@
+node_modules/
+android/local.properties
+android/keystore.properties
+android/app/release
+android/build/
+android/app/build/
+android/.gradle/
+android/captures/
+keystore/CREDENTIALS_DO_NOT_COMMIT.txt
+keystore/*.jks
+keystore/*.keystore
+.DS_Store
+*.log
