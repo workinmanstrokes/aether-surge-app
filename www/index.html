@@ -3,40 +3,35 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Brainrot Evolution: Ultimate Rush</title>
+  <title>Brainrot Evolution: 3D Squad</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; touch-action: none; }
     body, html { width: 100%; height: 100%; overflow: hidden; background: #0f172a; font-family: 'Arial Black', Impact, sans-serif; }
     canvas#gameCanvas { display: block; width: 100vw; height: 100vh; }
     
     #ui { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: none; }
-    
-    /* Top HUD */
     .top-bar { position: absolute; top: env(safe-area-inset-top, 16px); left: 16px; right: 16px; display: flex; flex-direction: column; gap: 12px; }
     .stats-row { display: flex; justify-content: space-between; align-items: center; color: #fff; font-size: 15px; text-shadow: 0 2px 6px rgba(0,0,0,0.9); }
     .badge { background: rgba(15, 23, 42, 0.92); padding: 8px 16px; border-radius: 20px; border: 2px solid #38bdf8; box-shadow: 0 4px 14px rgba(56, 189, 248, 0.4); display: flex; align-items: center; gap: 6px; }
     
-    /* Progress Bar */
     .progress-container { width: 100%; height: 14px; background: rgba(15,23,42,0.9); border: 2px solid #334155; border-radius: 8px; overflow: hidden; position: relative; }
     .progress-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #38bdf8, #818cf8, #c084fc); box-shadow: 0 0 10px #818cf8; transition: width 0.1s linear; }
     
     .tier-announcement { position: absolute; top: 90px; left: 50%; transform: translateX(-50%); color: #facc15; font-size: 18px; text-shadow: 0 3px 0 #854d0e, 0 0 14px rgba(250, 204, 21, 0.7); text-transform: uppercase; letter-spacing: 1px; white-space: nowrap; transition: transform 0.2s; }
     .tier-pop { transform: translateX(-50%) scale(1.3) !important; color: #fff !important; text-shadow: 0 0 20px #38bdf8 !important; }
 
-    /* Modals & Screens */
     .modal { position: absolute; inset: 0; background: rgba(2, 6, 23, 0.95); backdrop-filter: blur(8px); display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: auto; z-index: 100; }
     .card { background: linear-gradient(180deg, #1e1b4b 0%, #0f172a 100%); border: 4px solid #38bdf8; border-radius: 24px; padding: 30px 24px; text-align: center; width: 85%; max-width: 340px; box-shadow: 0 16px 50px rgba(56, 189, 248, 0.3); animation: slideUp 0.4s ease-out; }
     @keyframes slideUp { from { transform: translateY(40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
     
-    .card h1 { font-size: 30px; color: #38bdf8; margin-bottom: 12px; text-transform: uppercase; text-shadow: 0 4px 0 #0369a1; letter-spacing: 1px; }
+    .card h1 { font-size: 30px; color: #38bdf8; margin-bottom: 12px; text-transform: uppercase; text-shadow: 0 4px 0 #0369a1; }
     .card p { font-size: 16px; color: #cbd5e1; margin-bottom: 24px; font-family: sans-serif; font-weight: bold; line-height: 1.4; }
     
-    .btn { background: linear-gradient(180deg, #38bdf8 0%, #0284c7 100%); border: 2px solid #bae6fd; color: #0f172a; font-family: 'Arial Black', sans-serif; font-size: 20px; padding: 16px 32px; border-radius: 16px; cursor: pointer; box-shadow: 0 8px 20px rgba(56, 189, 248, 0.5); text-transform: uppercase; letter-spacing: 1px; transition: transform 0.1s; width: 100%; }
-    .btn:active { transform: scale(0.95); box-shadow: 0 4px 10px rgba(56, 189, 248, 0.5); }
+    .btn { background: linear-gradient(180deg, #38bdf8 0%, #0284c7 100%); border: 2px solid #bae6fd; color: #0f172a; font-family: 'Arial Black', sans-serif; font-size: 20px; padding: 16px 32px; border-radius: 16px; cursor: pointer; box-shadow: 0 8px 20px rgba(56, 189, 248, 0.5); text-transform: uppercase; letter-spacing: 1px; width: 100%; }
+    .btn:active { transform: scale(0.95); }
     
     #hint { position: absolute; bottom: 15%; left: 50%; transform: translateX(-50%); color: #fff; font-size: 18px; letter-spacing: 2px; animation: pulse 1s infinite alternate; text-shadow: 0 2px 4px #000; }
     
-    /* Boss HP Bar */
     #bossUI { position: absolute; top: 130px; left: 50%; transform: translateX(-50%); width: 80%; display: none; flex-direction: column; align-items: center; gap: 8px; }
     #bossUI span { color: #ef4444; font-size: 18px; text-shadow: 0 2px 4px #000; letter-spacing: 2px; }
     .boss-hp-container { width: 100%; height: 16px; background: rgba(0,0,0,0.8); border: 2px solid #7f1d1d; border-radius: 8px; overflow: hidden; }
@@ -51,12 +46,12 @@
       <div class="progress-container"><div class="progress-fill" id="progressBar"></div></div>
       <div class="stats-row">
         <div class="badge" id="levelBadge">ZONE 1</div>
-        <div class="badge" style="border-color:#facc15;" id="auraBadge">✨ 0 SCORE (AURA)</div>
+        <div class="badge" style="border-color:#facc15;" id="auraBadge">✨ 0 SCORE</div>
       </div>
     </div>
     
     <div id="bossUI">
-      <span>FINAL BOSS 👹</span>
+      <span>FINAL BOSS</span>
       <div class="boss-hp-container"><div class="boss-hp-fill" id="bossHpBar"></div></div>
     </div>
 
@@ -66,8 +61,8 @@
 
   <div id="startModal" class="modal">
     <div class="card">
-      <h1 style="color:#facc15; text-shadow:0 4px 0 #a16207; border-color:#facc15;">BRAINROT RUSH</h1>
-      <p>Pass green math gates.<br>Dodge red negative gates.<br>Defeat moving enemies and the Final Boss!</p>
+      <h1 style="color:#facc15; text-shadow:0 4px 0 #a16207; border-color:#facc15;">3D BRAINROT</h1>
+      <p>Custom 3D Sprites.<br>Themed Projectiles.<br>Evolve your Squad!</p>
       <button class="btn" style="background: linear-gradient(180deg, #facc15 0%, #ca8a04 100%); border-color:#fef08a;" onclick="startGame()">TAP TO START</button>
     </div>
   </div>
@@ -91,90 +86,62 @@
     window.addEventListener('resize', resize);
     resize();
 
-    // ----- AUDIO ENGINE -----
+    // Audio Engine
     const AudioContext = window.AudioContext || window.webkitAudioContext;
     let actx;
-    
     function initAudio() {
       if (!actx) actx = new AudioContext();
       if (actx.state === 'suspended') actx.resume();
     }
-
     function playSound(type) {
       if (!actx) return;
       const osc = actx.createOscillator();
       const gain = actx.createGain();
-      osc.connect(gain);
-      gain.connect(actx.destination);
+      osc.connect(gain); gain.connect(actx.destination);
       const now = actx.currentTime;
 
       if (type === 'shoot') {
-        osc.type = 'square';
-        osc.frequency.setValueAtTime(500, now);
-        osc.frequency.exponentialRampToValueAtTime(200, now + 0.08);
-        gain.gain.setValueAtTime(0.03, now);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+        osc.type = 'square'; osc.frequency.setValueAtTime(400, now); osc.frequency.exponentialRampToValueAtTime(150, now + 0.08);
+        gain.gain.setValueAtTime(0.03, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
         osc.start(now); osc.stop(now + 0.08);
       } else if (type === 'hit') {
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(200, now);
-        osc.frequency.exponentialRampToValueAtTime(50, now + 0.1);
-        gain.gain.setValueAtTime(0.1, now);
-        gain.gain.linearRampToValueAtTime(0, now + 0.1);
+        osc.type = 'sawtooth'; osc.frequency.setValueAtTime(200, now); osc.frequency.exponentialRampToValueAtTime(50, now + 0.1);
+        gain.gain.setValueAtTime(0.1, now); gain.gain.linearRampToValueAtTime(0, now + 0.1);
         osc.start(now); osc.stop(now + 0.1);
       } else if (type === 'powerup') {
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(800, now);
-        osc.frequency.setValueAtTime(1400, now + 0.1);
-        gain.gain.setValueAtTime(0.1, now);
-        gain.gain.linearRampToValueAtTime(0, now + 0.3);
+        osc.type = 'sine'; osc.frequency.setValueAtTime(600, now); osc.frequency.setValueAtTime(1200, now + 0.1);
+        gain.gain.setValueAtTime(0.1, now); gain.gain.linearRampToValueAtTime(0, now + 0.3);
         osc.start(now); osc.stop(now + 0.3);
       } else if (type === 'damage') {
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(120, now);
-        osc.frequency.exponentialRampToValueAtTime(20, now + 0.3);
-        gain.gain.setValueAtTime(0.2, now);
-        gain.gain.linearRampToValueAtTime(0, now + 0.3);
+        osc.type = 'sawtooth'; osc.frequency.setValueAtTime(120, now); osc.frequency.exponentialRampToValueAtTime(20, now + 0.3);
+        gain.gain.setValueAtTime(0.2, now); gain.gain.linearRampToValueAtTime(0, now + 0.3);
         osc.start(now); osc.stop(now + 0.3);
       }
     }
 
-    // ----- GAME STATE -----
-    let state = 'START'; // START, PLAYING, BOSS, VICTORY, GAMEOVER
-    let level = 1;
-    let aura = 0;
-    let trackProgress = 0;
-    let trackLength = 5000;
-    let runSpeed = 230;
-    let screenShake = 0;
+    // Game State
+    let state = 'START';
+    let level = 1, aura = 0, trackProgress = 0, trackLength = 5000, runSpeed = 230, screenShake = 0;
 
-    const squad = {
-      x: 0, targetX: 0, count: 4, fireRate: 4.0, fireRange: 500, shootTimer: 0, tier: 0
-    };
+    const squad = { x: 0, targetX: 0, count: 4, fireRate: 4.0, fireRange: 500, shootTimer: 0, tier: 0 };
 
-    // Authentic Emojis for Brainrot Tiers & Projectiles
     const TIERS = [
-      { minCount: 1, name: "TIER 1: SKIBIDI 🚽", emoji: "🚽", bullet: "💧", color: "#64748b", fireMult: 1.0 },
-      { minCount: 10, name: "TIER 2: SMURF CAT 🍄", emoji: "🍄", bullet: "🔵", color: "#0ea5e9", fireMult: 1.5 },
-      { minCount: 25, name: "TIER 3: GRIMACE 🟣", emoji: "🟣", bullet: "🟣", color: "#9333ea", fireMult: 2.0 },
-      { minCount: 50, name: "TIER 4: SIGMA 🗿", emoji: "🗿", bullet: "⚡", color: "#64748b", fireMult: 2.8 },
-      { minCount: 100, name: "TIER 5: GORILLA KING 🦍", emoji: "🦍", bullet: "🔥", color: "#f59e0b", fireMult: 4.0 }
+      { minCount: 1, name: "TIER 1: SKIBIDI", proj: "poop", fireMult: 1.0 },
+      { minCount: 10, name: "TIER 2: SMURF CAT", proj: "mushroom", fireMult: 1.5 },
+      { minCount: 25, name: "TIER 3: GRIMACE", proj: "shake", fireMult: 2.0 },
+      { minCount: 50, name: "TIER 4: SIGMA", proj: "dumbbell", fireMult: 2.8 },
+      { minCount: 100, name: "TIER 5: GORILLA KING", proj: "barrel", fireMult: 4.0 }
     ];
 
     const entities = { bullets: [], gates: [], enemies: [], particles: [], texts: [] };
     let boss = null;
 
-    // ----- CONTROLS -----
-    let dragging = false;
-    let dragStartX = 0;
-    let squadStartX = 0;
+    let dragging = false, dragStartX = 0, squadStartX = 0;
 
     function onPointerDown(e) {
       if (state !== 'PLAYING' && state !== 'BOSS') return;
-      dragging = true;
-      dragStartX = e.touches ? e.touches[0].clientX : e.clientX;
-      squadStartX = squad.targetX;
-      document.getElementById('hint').style.display = 'none';
+      dragging = true; dragStartX = e.touches ? e.touches[0].clientX : e.clientX;
+      squadStartX = squad.targetX; document.getElementById('hint').style.display = 'none';
     }
     function onPointerMove(e) {
       if (!dragging) return;
@@ -183,80 +150,50 @@
       squad.targetX = Math.max(-145, Math.min(145, squadStartX + dx));
     }
     function onPointerUp() { dragging = false; }
+    window.addEventListener('mousedown', onPointerDown); window.addEventListener('mousemove', onPointerMove); window.addEventListener('mouseup', onPointerUp);
+    window.addEventListener('touchstart', onPointerDown, { passive: true }); window.addEventListener('touchmove', onPointerMove, { passive: true }); window.addEventListener('touchend', onPointerUp);
 
-    window.addEventListener('mousedown', onPointerDown);
-    window.addEventListener('mousemove', onPointerMove);
-    window.addEventListener('mouseup', onPointerUp);
-    window.addEventListener('touchstart', onPointerDown, { passive: true });
-    window.addEventListener('touchmove', onPointerMove, { passive: true });
-    window.addEventListener('touchend', onPointerUp);
-
-    function startGame() {
-      initAudio();
-      document.getElementById('startModal').style.display = 'none';
-      document.getElementById('ui').style.display = 'block';
-      initLevel();
-    }
+    function startGame() { initAudio(); document.getElementById('startModal').style.display = 'none'; document.getElementById('ui').style.display = 'block'; initLevel(); }
 
     function generateGateAction(isBad) {
-      const types = ['SQUAD_ADD', 'SQUAD_MULT', 'AURA', 'FIRE_RATE'];
+      const types = ['SQUAD_ADD', 'SQUAD_MULT', 'AURA'];
       const type = types[Math.floor(Math.random() * types.length)];
-      
       if (isBad) {
         if (type === 'SQUAD_ADD') return { text: `-5 SQUAD`, type: 'SQUAD_ADD', val: -5 };
-        if (type === 'SQUAD_MULT') return { text: `÷2 SQUAD (DIVIDE)`, type: 'SQUAD_MULT', val: 0.5 };
-        if (type === 'AURA') return { text: `-150 SCORE (AURA)`, type: 'AURA', val: -150 };
-        if (type === 'FIRE_RATE') return { text: `FIRE RATE DOWN`, type: 'FIRE_RATE', val: -0.5 };
+        if (type === 'SQUAD_MULT') return { text: `÷2 SQUAD`, type: 'SQUAD_MULT', val: 0.5 };
+        return { text: `-150 SCORE`, type: 'AURA', val: -150 };
       } else {
         if (type === 'SQUAD_ADD') return { text: `+${Math.floor(Math.random()*10)+5} SQUAD`, type: 'SQUAD_ADD', val: Math.floor(Math.random()*10)+5 };
-        if (type === 'SQUAD_MULT') return { text: `x2 SQUAD (CLONES)`, type: 'SQUAD_MULT', val: 2 };
-        if (type === 'AURA') return { text: `+250 SCORE (AURA)`, type: 'AURA', val: 250 };
-        if (type === 'FIRE_RATE') return { text: `FIRE RATE UP`, type: 'FIRE_RATE', val: 0.8 };
+        if (type === 'SQUAD_MULT') return { text: `x2 SQUAD`, type: 'SQUAD_MULT', val: 2 };
+        return { text: `+250 SCORE`, type: 'AURA', val: 250 };
       }
-      return { text: `+5 SQUAD`, type: 'SQUAD_ADD', val: 5 };
     }
 
     function initLevel() {
-      state = 'PLAYING';
-      trackProgress = 0;
-      trackLength = 4500 + (level * 800);
-      runSpeed = 230 + (level * 10);
-      
-      squad.x = 0; squad.targetX = 0; squad.count = 4; squad.fireRate = 4.0;
-      
+      state = 'PLAYING'; trackProgress = 0; trackLength = 4500 + (level * 800); runSpeed = 230 + (level * 10);
+      squad.x = 0; squad.targetX = 0; squad.count = 4;
       for(let key in entities) entities[key].length = 0;
-      boss = null;
-      document.getElementById('bossUI').style.display = 'none';
-      document.getElementById('endModal').style.display = 'none';
-      document.getElementById('levelBadge').innerText = `ZONE ${level}`;
-      updateAuraUI();
+      boss = null; document.getElementById('bossUI').style.display = 'none'; document.getElementById('endModal').style.display = 'none';
+      document.getElementById('levelBadge').innerText = `ZONE ${level}`; updateAuraUI();
 
       let y = 600;
       while (y < trackLength - 600) {
-        const r = Math.random();
-        if (r < 0.45) {
-          // Gates (Math & Upgrades)
+        if (Math.random() < 0.45) {
           const isRightBad = Math.random() < 0.4;
-          const leftAction = generateGateAction(false);
-          const rightAction = generateGateAction(isRightBad);
           entities.gates.push({
             y: y,
-            left: { x: -75, ...leftAction, hp: 25, isBad: false },
-            right: { x: 75, ...rightAction, hp: 25, isBad: isRightBad },
+            left: { x: -75, ...generateGateAction(false), hp: 25 },
+            right: { x: 75, ...generateGateAction(isRightBad), hp: 25, isBad: isRightBad },
             active: true
           });
           y += 550;
         } else {
-          // Enemies: Obstacle Barrels (🛢️) or Moving Bots (👾)
           const isBotRow = Math.random() < 0.5;
           for (let b = 0; b < 3; b++) {
             entities.enemies.push({
               x: -100 + b * 100, y: y,
               hp: 40 + level * 10, maxHp: 40 + level * 10,
-              type: isBotRow ? 'BOT' : 'BARREL',
-              emoji: isBotRow ? '👾' : '🛢️',
-              aura: isBotRow ? 100 : 50,
-              active: true, hitTime: 0
+              type: isBotRow ? 'BOT' : 'BARREL', aura: isBotRow ? 100 : 50, active: true, hitTime: 0
             });
           }
           y += 450;
@@ -265,48 +202,31 @@
     }
 
     function spawnBoss() {
-      state = 'BOSS';
-      boss = {
-        x: 0, y: trackProgress + 550,
-        hp: 1500 + (level * 500), maxHp: 1500 + (level * 500),
-        emoji: '👹', moveTimer: 0, hitTime: 0, active: true
-      };
+      state = 'BOSS'; runSpeed = 60;
+      boss = { x: 0, y: trackProgress + 550, hp: 1500 + (level * 500), maxHp: 1500 + (level * 500), moveTimer: 0, hitTime: 0, active: true };
       document.getElementById('bossUI').style.display = 'flex';
-      runSpeed = 60; // Slow down track dramatically for boss fight
     }
 
     function updateAuraUI() {
-      const badge = document.getElementById('auraBadge');
-      badge.innerText = `✨ ${aura >= 0 ? '+' : ''}${Math.round(aura)} SCORE (AURA)`;
-      badge.style.color = aura < 0 ? '#ef4444' : '#fff';
-      badge.style.borderColor = aura < 0 ? '#ef4444' : '#facc15';
+      const b = document.getElementById('auraBadge');
+      b.innerText = `✨ ${Math.round(aura)} SCORE`;
+      b.style.color = aura < 0 ? '#ef4444' : '#fff'; b.style.borderColor = aura < 0 ? '#ef4444' : '#facc15';
     }
-
-    function triggerShake(amt) { screenShake = Math.min(screenShake + amt, 25); }
 
     function spawnExplosion(x, y, color, count = 12) {
       playSound('hit');
       for (let i = 0; i < count; i++) {
-        const ang = Math.random() * Math.PI * 2;
-        const spd = 50 + Math.random() * 200;
-        entities.particles.push({
-          x, y, vx: Math.cos(ang) * spd, vy: Math.sin(ang) * spd,
-          color, life: 0.4, size: 5 + Math.random() * 6
-        });
+        const ang = Math.random() * Math.PI * 2; const spd = 50 + Math.random() * 200;
+        entities.particles.push({ x, y, vx: Math.cos(ang) * spd, vy: Math.sin(ang) * spd, color, life: 0.4, size: 5 + Math.random() * 6 });
       }
     }
-
-    function addFloatText(x, y, str, color) {
-      entities.texts.push({ x, y, str, color, life: 0.7, vy: 60 });
-    }
+    function addFloatText(x, y, str, color) { entities.texts.push({ x, y, str, color, life: 0.7, vy: 60 }); }
 
     let lastTime = performance.now();
     function loop(now) {
-      const dt = Math.min((now - lastTime) / 1000, 0.05);
-      lastTime = now;
+      const dt = Math.min((now - lastTime) / 1000, 0.05); lastTime = now;
       if (state === 'PLAYING' || state === 'BOSS') update(dt);
-      render();
-      requestAnimationFrame(loop);
+      render(); requestAnimationFrame(loop);
     }
 
     function update(dt) {
@@ -316,372 +236,246 @@
         if (trackProgress > trackLength) spawnBoss();
       }
 
-      // Smooth steering
       squad.x += (squad.targetX - squad.x) * 15 * dt;
 
-      // Update Tier
       const oldTier = squad.tier;
-      for (let i = TIERS.length - 1; i >= 0; i--) {
-        if (squad.count >= TIERS[i].minCount) { squad.tier = i; break; }
-      }
+      for (let i = TIERS.length - 1; i >= 0; i--) { if (squad.count >= TIERS[i].minCount) { squad.tier = i; break; } }
       const tInfo = TIERS[squad.tier];
       
       const badgeUI = document.getElementById('tierBadge');
-      if (oldTier !== squad.tier) {
-        badgeUI.classList.add('tier-pop');
-        setTimeout(() => badgeUI.classList.remove('tier-pop'), 200);
-      }
+      if (oldTier !== squad.tier) { badgeUI.classList.add('tier-pop'); setTimeout(() => badgeUI.classList.remove('tier-pop'), 200); }
       badgeUI.innerText = tInfo.name;
 
-      // Shooting
       squad.shootTimer += dt;
       const interval = 1 / (squad.fireRate * tInfo.fireMult);
       if (squad.shootTimer >= interval) {
-        squad.shootTimer = 0;
-        playSound('shoot');
+        squad.shootTimer = 0; playSound('shoot');
         const numBullets = Math.min(squad.count, Math.min(5 + squad.tier * 2, 14));
         for (let i = 0; i < numBullets; i++) {
           const spread = (i - (numBullets - 1) / 2) * 12;
           entities.bullets.push({
-            x: squad.x + spread, y: trackProgress + 45,
-            vy: 850, dmg: 8 + squad.tier * 5, emoji: tInfo.bullet, color: tInfo.color, life: squad.fireRange / 850
+            x: squad.x + spread, y: trackProgress + 45, vy: 850, dmg: 8 + squad.tier * 5, type: tInfo.proj, life: squad.fireRange / 850
           });
         }
       }
 
-      // Boss Logic
       if (state === 'BOSS' && boss.active) {
-        boss.y = trackProgress + 400; // Keep boss ahead of player
-        boss.moveTimer += dt * 2.5;
-        boss.x = Math.sin(boss.moveTimer) * 110; // Sweep side to side
+        boss.y = trackProgress + 400; boss.moveTimer += dt * 2.5; boss.x = Math.sin(boss.moveTimer) * 110;
         document.getElementById('bossHpBar').style.width = `${Math.max(0, (boss.hp / boss.maxHp) * 100)}%`;
-
-        if (Math.hypot(squad.x - boss.x, trackProgress - boss.y) < 70) {
-          boss.active = false;
-          squad.count = 0; // Boss crushes you instantly if you touch him
-          gameOver();
-          return;
-        }
+        if (Math.hypot(squad.x - boss.x, trackProgress - boss.y) < 70) { boss.active = false; squad.count = 0; gameOver(); return; }
       }
 
-      // Update Enemies (Bots move down)
       for (let e of entities.enemies) {
         if (!e.active) continue;
-        if (e.type === 'BOT') e.y -= 50 * dt; // Bots walk towards player
-        
+        if (e.type === 'BOT') e.y -= 50 * dt;
         if (Math.hypot(squad.x - e.x, trackProgress - e.y) < 40) {
-          e.active = false;
-          squad.count -= Math.floor(e.maxHp / 10);
-          triggerShake(12); playSound('damage');
-          spawnExplosion(e.x, e.y, '#ef4444', 20);
+          e.active = false; squad.count -= Math.floor(e.maxHp / 10);
+          screenShake = 12; playSound('damage'); spawnExplosion(e.x, e.y, '#ef4444', 20);
           if (squad.count <= 0) { gameOver(); return; }
         }
       }
 
-      // Update Bullets
       for (let i = entities.bullets.length - 1; i >= 0; i--) {
-        const b = entities.bullets[i];
-        b.y += b.vy * dt; b.life -= dt;
-        let hit = false;
-
-        // Hit Gates
+        const b = entities.bullets[i]; b.y += b.vy * dt; b.life -= dt; let hit = false;
         for (let g of entities.gates) {
           if (!g.active || hit) continue;
           if (Math.abs(b.y - g.y) < 25) {
-            if (b.x < 0 && Math.abs(b.x - g.left.x) < 70) {
-              if (g.left.type === 'SQUAD_ADD' && !g.left.isBad) g.left.val += 0.2;
-              g.left.hitTime = 0.1; hit = true;
-            } else if (b.x > 0 && Math.abs(b.x - g.right.x) < 70) {
-              if (g.right.type === 'SQUAD_ADD' && !g.right.isBad) g.right.val += 0.2;
-              g.right.hitTime = 0.1; hit = true;
-            }
+            if (b.x < 0 && Math.abs(b.x - g.left.x) < 70) { if (g.left.type === 'SQUAD_ADD' && !g.left.isBad) g.left.val += 0.2; g.left.hitTime = 0.1; hit = true; }
+            else if (b.x > 0 && Math.abs(b.x - g.right.x) < 70) { if (g.right.type === 'SQUAD_ADD' && !g.right.isBad) g.right.val += 0.2; g.right.hitTime = 0.1; hit = true; }
           }
         }
-
-        // Hit Enemies
         for (let e of entities.enemies) {
           if (!e.active || hit) continue;
           if (Math.hypot(b.x - e.x, b.y - e.y) < 36) {
-            e.hp -= b.dmg; e.hitTime = 0.1; hit = true;
-            spawnExplosion(b.x, b.y, b.color, 2);
-            if (e.hp <= 0) {
-              e.active = false; aura += e.aura; updateAuraUI(); playSound('powerup');
-              addFloatText(e.x, e.y, `+${e.aura} SCORE`, '#facc15');
-              spawnExplosion(e.x, e.y, '#f59e0b', 16);
-            }
+            e.hp -= b.dmg; e.hitTime = 0.1; hit = true; spawnExplosion(b.x, b.y, '#f8fafc', 2);
+            if (e.hp <= 0) { e.active = false; aura += e.aura; updateAuraUI(); playSound('powerup'); addFloatText(e.x, e.y, `+${e.aura}`, '#facc15'); spawnExplosion(e.x, e.y, '#f59e0b', 16); }
           }
         }
-
-        // Hit Boss
         if (state === 'BOSS' && boss.active && !hit) {
-          if (Math.hypot(b.x - boss.x, b.y - boss.y) < 65) {
-            boss.hp -= b.dmg; boss.hitTime = 0.1; hit = true;
-            spawnExplosion(b.x, b.y, b.color, 3);
-            if (boss.hp <= 0) {
-              boss.active = false;
-              aura += 2000; updateAuraUI();
-              playSound('powerup');
-              spawnExplosion(boss.x, boss.y, '#facc15', 50);
-              victory();
-            }
+          if (Math.hypot(b.x - boss.x, b.y - boss.y) < 70) {
+            boss.hp -= b.dmg; boss.hitTime = 0.1; hit = true; spawnExplosion(b.x, b.y, '#ef4444', 3);
+            if (boss.hp <= 0) { boss.active = false; aura += 2000; updateAuraUI(); playSound('powerup'); spawnExplosion(boss.x, boss.y, '#facc15', 50); victory(); }
           }
         }
-
-        if (hit || b.life <= 0) {
-          entities.bullets[i] = entities.bullets[entities.bullets.length - 1];
-          entities.bullets.pop();
-        }
+        if (hit || b.life <= 0) { entities.bullets[i] = entities.bullets[entities.bullets.length - 1]; entities.bullets.pop(); }
       }
 
-      // Check Gate pass
       for (let g of entities.gates) {
         if (!g.active) continue;
         if (trackProgress >= g.y && trackProgress - runSpeed * dt < g.y) {
-          g.active = false;
-          const chosen = squad.x < 0 ? g.left : g.right;
-          
-          if (chosen.type === 'SQUAD_ADD') {
-            squad.count = Math.max(1, squad.count + Math.round(chosen.val));
-          } else if (chosen.type === 'SQUAD_MULT') {
-            squad.count = Math.max(1, Math.round(squad.count * chosen.val));
-          } else if (chosen.type === 'AURA') {
-            aura += chosen.val; updateAuraUI();
-          } else if (chosen.type === 'FIRE_RATE') {
-            squad.fireRate += chosen.val;
-          }
-          
-          playSound('powerup');
-          addFloatText(squad.x, g.y, chosen.text, chosen.isBad ? '#ef4444' : '#38bdf8');
+          g.active = false; const chosen = squad.x < 0 ? g.left : g.right;
+          if (chosen.type === 'SQUAD_ADD') { squad.count = Math.max(1, squad.count + Math.round(chosen.val)); }
+          else if (chosen.type === 'SQUAD_MULT') { squad.count = Math.max(1, Math.round(squad.count * chosen.val)); }
+          else if (chosen.type === 'AURA') { aura += chosen.val; updateAuraUI(); }
+          playSound('powerup'); addFloatText(squad.x, g.y, chosen.text, chosen.isBad ? '#ef4444' : '#38bdf8');
           spawnExplosion(chosen.x, g.y, chosen.isBad ? '#ef4444' : '#38bdf8', 25);
         }
       }
 
-      // Particles & Texts
       for (let i = entities.particles.length - 1; i >= 0; i--) {
-        const p = entities.particles[i];
-        p.x += p.vx * dt; p.y += p.vy * dt;
-        p.vx *= 0.95; p.vy *= 0.95; 
-        p.life -= dt;
+        const p = entities.particles[i]; p.x += p.vx * dt; p.y += p.vy * dt; p.vx *= 0.95; p.vy *= 0.95; p.life -= dt;
         if (p.life <= 0) { entities.particles[i] = entities.particles[entities.particles.length - 1]; entities.particles.pop(); }
       }
       for (let i = entities.texts.length - 1; i >= 0; i--) {
-        const t = entities.texts[i];
-        t.y += t.vy * dt; t.life -= dt;
+        const t = entities.texts[i]; t.y += t.vy * dt; t.life -= dt;
         if (t.life <= 0) { entities.texts[i] = entities.texts[entities.texts.length - 1]; entities.texts.pop(); }
       }
-
-      if (screenShake > 0) screenShake -= dt * 40;
-      if (screenShake < 0) screenShake = 0;
+      if (screenShake > 0) screenShake -= dt * 40; if (screenShake < 0) screenShake = 0;
     }
 
-    // ----- RENDERING -----
-    function render() {
-      ctx.fillStyle = '#0f172a';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    // ----- 3D VOXEL RENDERING ENGINE -----
+    function drawVoxel(ctx, x, y, z, w, h, d, hexColor) {
+      const isoX = x; const isoY = y - z;
+      ctx.fillStyle = hexColor; ctx.beginPath(); ctx.moveTo(isoX, isoY - h); ctx.lineTo(isoX + w/2, isoY - h - d/3); ctx.lineTo(isoX, isoY - h - (2*d)/3); ctx.lineTo(isoX - w/2, isoY - h - d/3); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = adjustBrightness(hexColor, -25); ctx.beginPath(); ctx.moveTo(isoX, isoY - h); ctx.lineTo(isoX + w/2, isoY - h - d/3); ctx.lineTo(isoX + w/2, isoY - d/3); ctx.lineTo(isoX, isoY); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = adjustBrightness(hexColor, -45); ctx.beginPath(); ctx.moveTo(isoX, isoY - h); ctx.lineTo(isoX - w/2, isoY - h - d/3); ctx.lineTo(isoX - w/2, isoY - d/3); ctx.lineTo(isoX, isoY); ctx.closePath(); ctx.fill();
+    }
+    function adjustBrightness(hex, percent) {
+      let num = parseInt(hex.replace("#",""), 16), amt = Math.round(2.55 * percent);
+      let R = (num >> 16) + amt, G = (num >> 8 & 0x00FF) + amt, B = (num & 0x0000FF) + amt;
+      return "#" + (0x1000000 + (R<255?R<1?0:R:255)*0x10000 + (G<255?G<1?0:G:255)*0x100 + (B<255?B<1?0:B:255)).toString(16).slice(1);
+    }
+    function drawShadow(ctx, x, y, radius) { ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.beginPath(); ctx.ellipse(x, y - radius*0.2, radius, radius*0.3, 0, 0, Math.PI*2); ctx.fill(); }
 
-      const cx = canvas.width / 2;
-      const cy = canvas.height * 0.78;
+    function drawGate(side, y, color, isHit) {
+      ctx.save(); ctx.translate(side.x, y);
+      ctx.fillStyle = isHit ? '#ffffff' : color; ctx.globalAlpha = isHit ? 0.9 : 0.4; ctx.fillRect(-85, -5, 170, 10);
+      ctx.globalAlpha = 1.0; ctx.strokeStyle = isHit ? '#ffffff' : color; ctx.lineWidth = 4; ctx.strokeRect(-85, -5, 170, 10);
+      ctx.save(); ctx.scale(1, -1); ctx.fillStyle = '#ffffff'; ctx.strokeStyle = '#000000'; ctx.lineWidth = 4; ctx.font = '900 16px Arial Black'; ctx.textAlign = 'center';
+      let text = side.text; if (side.type === 'SQUAD_ADD' && !side.isBad) text = `+${Math.round(side.val)} SQUAD`;
+      ctx.strokeText(text, 0, 18); ctx.fillText(text, 0, 18);
+      ctx.restore(); ctx.restore();
+    }
+
+    function drawCharacter(ctx, tier, ox, oy, bob, hitTime) {
+      const colorMod = hitTime > 0 ? 100 : 0; // Fake brightness
+      if (tier === 0) { // Skibidi Toilet
+        drawVoxel(ctx, ox, oy, bob, 16, 12, 16, hitTime ? '#ffffff' : '#f8fafc'); // Bowl
+        drawVoxel(ctx, ox, oy+6, 12+bob, 12, 16, 8, hitTime ? '#ffffff' : '#e2e8f0'); // Tank
+        drawVoxel(ctx, ox, oy-2, 10+bob, 8, 8, 8, hitTime ? '#ffffff' : '#fcd34d'); // Head
+      } else if (tier === 1) { // Smurf Cat
+        drawVoxel(ctx, ox, oy, bob, 12, 10, 12, hitTime ? '#ffffff' : '#0ea5e9'); // Body
+        drawVoxel(ctx, ox, oy, 10+bob, 22, 14, 22, hitTime ? '#ffffff' : '#f8fafc'); // Mushroom hat
+      } else if (tier === 2) { // Grimace
+        drawVoxel(ctx, ox, oy, bob, 22, 24, 22, hitTime ? '#ffffff' : '#9333ea'); // Blob body
+      } else if (tier === 3) { // GigaChad
+        drawVoxel(ctx, ox, oy, bob, 20, 18, 12, hitTime ? '#ffffff' : '#1e293b'); // Suit
+        drawVoxel(ctx, ox, oy, 18+bob, 14, 14, 14, hitTime ? '#ffffff' : '#f59e0b'); // Jaw
+      } else { // Gorilla
+        drawVoxel(ctx, ox, oy, bob, 26, 24, 24, hitTime ? '#ffffff' : '#1f2937'); // Body
+        drawVoxel(ctx, ox, oy, 24+bob, 16, 10, 16, hitTime ? '#ffffff' : '#facc15'); // Crown
+      }
+    }
+
+    function drawProjectile(ctx, b) {
+      if (b.type === 'poop') {
+        drawVoxel(ctx, b.x, b.y, 10, 6, 6, 6, '#78350f'); drawVoxel(ctx, b.x, b.y, 16, 4, 4, 4, '#78350f');
+      } else if (b.type === 'mushroom') {
+        drawVoxel(ctx, b.x, b.y, 12, 4, 4, 4, '#f8fafc'); drawVoxel(ctx, b.x, b.y, 16, 10, 4, 10, '#0ea5e9');
+      } else if (b.type === 'shake') {
+        drawVoxel(ctx, b.x, b.y, 12, 8, 8, 8, '#d8b4fe');
+      } else if (b.type === 'dumbbell') {
+        drawVoxel(ctx, b.x-6, b.y, 12, 4, 10, 10, '#475569'); drawVoxel(ctx, b.x+6, b.y, 12, 4, 10, 10, '#475569');
+        drawVoxel(ctx, b.x, b.y, 16, 12, 3, 3, '#94a3b8'); // Bar
+      } else if (b.type === 'barrel') {
+        drawVoxel(ctx, b.x, b.y, 14, 12, 16, 12, '#b45309');
+      }
+    }
+
+    function render() {
+      ctx.fillStyle = '#0f172a'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+      const cx = canvas.width / 2, cy = canvas.height * 0.78;
 
       ctx.save();
       if (screenShake > 0) ctx.translate((Math.random() - 0.5) * screenShake, (Math.random() - 0.5) * screenShake);
       ctx.translate(cx, cy);
 
-      // Track floor
       const roadW = 360;
-      ctx.fillStyle = '#1e293b';
-      ctx.fillRect(-roadW / 2, -cy, roadW, canvas.height);
-      ctx.fillStyle = '#0ea5e9';
-      ctx.fillRect(-roadW / 2 - 6, -cy, 6, canvas.height);
-      ctx.fillRect(roadW / 2, -cy, 6, canvas.height);
+      ctx.fillStyle = '#1e293b'; ctx.fillRect(-roadW / 2, -cy, roadW, canvas.height);
+      ctx.fillStyle = '#0ea5e9'; ctx.fillRect(-roadW / 2 - 6, -cy, 6, canvas.height); ctx.fillRect(roadW / 2, -cy, 6, canvas.height);
 
-      // Moving Grid lines
-      const spacing = 160;
-      const offset = -(trackProgress % spacing);
-      ctx.strokeStyle = '#334155';
-      ctx.lineWidth = 3;
+      const spacing = 160, offset = -(trackProgress % spacing);
+      ctx.strokeStyle = '#334155'; ctx.lineWidth = 3;
       for (let y = -cy + offset - spacing; y < cy + spacing; y += spacing) {
         ctx.beginPath(); ctx.moveTo(-roadW / 2, y); ctx.lineTo(roadW / 2, y); ctx.stroke();
       }
 
-      ctx.save();
-      ctx.scale(1, -1);
-      ctx.translate(0, -trackProgress);
+      ctx.save(); ctx.scale(1, -1); ctx.translate(0, -trackProgress);
 
-      // Gates (Forcefield style)
       for (let g of entities.gates) {
         if (!g.active) continue;
-        if (g.left.hitTime > 0) g.left.hitTime -= 0.016;
-        if (g.right.hitTime > 0) g.right.hitTime -= 0.016;
+        if (g.left.hitTime > 0) g.left.hitTime -= 0.016; if (g.right.hitTime > 0) g.right.hitTime -= 0.016;
         drawGate(g.left, g.y, g.left.isBad ? '#ef4444' : '#22c55e', g.left.hitTime > 0);
         drawGate(g.right, g.y, g.right.isBad ? '#ef4444' : '#38bdf8', g.right.hitTime > 0);
       }
 
-      // Enemies (Emojis)
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
       for (let e of entities.enemies) {
         if (!e.active) continue;
         if (e.hitTime > 0) e.hitTime -= 0.016;
-        
         drawShadow(ctx, e.x, e.y, 40);
-        ctx.save();
-        ctx.translate(e.x, e.y);
-        ctx.scale(1, -1);
-        if (e.hitTime > 0) ctx.filter = 'brightness(2)'; // Hit flash
-        ctx.font = '45px Arial';
-        ctx.fillText(e.emoji, 0, 0);
-        ctx.restore();
-
-        // HP Bar
+        if (e.type === 'BOT') {
+          drawVoxel(ctx, e.x, e.y, 0, 16, 20, 16, e.hitTime > 0 ? '#ffffff' : '#64748b'); // Body
+          drawVoxel(ctx, e.x, e.y, 20, 12, 10, 12, e.hitTime > 0 ? '#ffffff' : '#94a3b8'); // Head
+          drawVoxel(ctx, e.x, e.y+4, 24, 6, 4, 4, '#ef4444'); // Red eye
+        } else {
+          drawVoxel(ctx, e.x, e.y, 0, 24, 28, 24, e.hitTime > 0 ? '#ffffff' : '#b45309'); // Barrel
+        }
         ctx.save(); ctx.translate(e.x, e.y); ctx.scale(1, -1);
         ctx.fillStyle = '#000'; ctx.fillRect(-20, -35, 40, 8);
         ctx.fillStyle = '#ef4444'; ctx.fillRect(-20, -35, 40 * (e.hp/e.maxHp), 8);
         ctx.restore();
       }
 
-      // Boss
       if (state === 'BOSS' && boss && boss.active) {
         if (boss.hitTime > 0) boss.hitTime -= 0.016;
         drawShadow(ctx, boss.x, boss.y, 80);
-        ctx.save();
-        ctx.translate(boss.x, boss.y);
-        ctx.scale(1, -1);
-        if (boss.hitTime > 0) ctx.filter = 'brightness(2)';
-        ctx.font = '90px Arial';
-        ctx.fillText(boss.emoji, 0, 0);
-        ctx.restore();
+        // Giant Ogre Boss
+        drawVoxel(ctx, boss.x, boss.y, 0, 60, 50, 40, boss.hitTime > 0 ? '#ffffff' : '#9f1239'); // Body
+        drawVoxel(ctx, boss.x, boss.y, 50, 40, 40, 30, boss.hitTime > 0 ? '#ffffff' : '#be123c'); // Head
+        drawVoxel(ctx, boss.x-10, boss.y+10, 70, 8, 8, 8, '#fcd34d'); // Eye 1
+        drawVoxel(ctx, boss.x+10, boss.y+10, 70, 8, 8, 8, '#fcd34d'); // Eye 2
       }
 
-      // Bullets (Emojis)
-      for (let b of entities.bullets) {
-        ctx.save();
-        ctx.translate(b.x, b.y);
-        ctx.scale(1, -1);
-        ctx.font = '20px Arial';
-        ctx.fillText(b.emoji, 0, 0);
-        ctx.restore();
-      }
+      for (let b of entities.bullets) { drawShadow(ctx, b.x, b.y, 10); drawProjectile(ctx, b); }
 
-      // Player Squad Formations (Emojis)
-      drawSquad();
-
-      // Particles
-      for (let p of entities.particles) {
-        ctx.fillStyle = p.color;
-        ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill();
-      }
-
-      // Float Texts
-      for (let t of entities.texts) {
-        ctx.save(); ctx.translate(t.x, t.y); ctx.scale(1, -1);
-        ctx.fillStyle = t.color; ctx.strokeStyle = '#000'; ctx.lineWidth = 3;
-        ctx.font = '900 20px Arial Black'; ctx.textAlign = 'center';
-        ctx.strokeText(t.str, 0, 0); ctx.fillText(t.str, 0, 0);
-        ctx.restore();
-      }
-
-      ctx.restore(); // world transform
-      ctx.restore(); // screen transform
-    }
-
-    function drawShadow(ctx, x, y, radius) {
-      ctx.fillStyle = 'rgba(0,0,0,0.5)';
-      ctx.beginPath(); ctx.ellipse(x, y - radius*0.2, radius, radius*0.3, 0, 0, Math.PI*2); ctx.fill();
-    }
-
-    function drawGate(side, y, color, isHit) {
-      ctx.save(); ctx.translate(side.x, y);
-      
-      // Forcefield glass effect
-      ctx.fillStyle = isHit ? '#ffffff' : color;
-      ctx.globalAlpha = isHit ? 0.9 : 0.4;
-      ctx.fillRect(-85, -5, 170, 10);
-      
-      ctx.globalAlpha = 1.0;
-      ctx.strokeStyle = isHit ? '#ffffff' : color;
-      ctx.lineWidth = 4;
-      ctx.strokeRect(-85, -5, 170, 10);
-      
-      // Floating text above gate
-      ctx.save(); ctx.scale(1, -1);
-      ctx.fillStyle = '#ffffff'; ctx.strokeStyle = '#000000'; ctx.lineWidth = 4;
-      ctx.font = '900 16px Arial Black'; ctx.textAlign = 'center';
-      
-      // If it's a multiplier or action gate, parse text
-      let displayText = side.text;
-      if (side.type === 'SQUAD_ADD' && !side.isBad) displayText = `+${Math.round(side.val)} SQUAD`;
-      
-      ctx.strokeText(displayText, 0, 18); ctx.fillText(displayText, 0, 18);
-      ctx.restore(); ctx.restore();
-    }
-
-    function drawSquad() {
+      // Draw Squad
       ctx.save(); ctx.translate(squad.x, trackProgress);
-      const count = Math.max(1, squad.count);
+      const count = Math.max(1, squad.count), rows = Math.ceil(Math.sqrt(count)), cols = Math.ceil(count / rows);
       drawShadow(ctx, 0, 0, 40 + Math.min(count, 30));
-
-      const rows = Math.ceil(Math.sqrt(count));
-      const cols = Math.ceil(count / rows);
-      const emoji = TIERS[squad.tier].emoji;
 
       let drawn = 0;
       for (let r = 0; r < rows; r++) {
         for (let c = 0; c < cols; c++) {
           if (drawn >= count) break;
-          // Grid formation
-          const ox = (c - (cols - 1) / 2) * 28;
-          const oy = (r - (rows - 1) / 2) * 28;
-          
-          // Walking Bob Animation
+          const ox = (c - (cols - 1) / 2) * 26, oy = (r - (rows - 1) / 2) * 26;
           const bob = Math.abs(Math.sin((trackProgress * 0.1) + drawn)) * 8;
-
-          ctx.save();
-          ctx.translate(ox, oy + bob);
-          ctx.scale(1, -1);
-          ctx.font = '32px Arial';
-          ctx.fillText(emoji, 0, 0);
-          ctx.restore();
-
+          drawCharacter(ctx, squad.tier, ox, oy, bob, 0);
           drawn++;
         }
       }
-
-      // Squad Count Bubble
       ctx.save(); ctx.scale(1, -1);
       ctx.fillStyle = '#0f172a'; ctx.beginPath(); ctx.roundRect(-30, 35, 60, 24, 12); ctx.fill();
-      ctx.strokeStyle = TIERS[squad.tier].color; ctx.lineWidth = 2; ctx.stroke();
-      ctx.fillStyle = '#fff'; ctx.font = '900 14px Arial Black'; ctx.textAlign = 'center';
-      ctx.fillText(`x${Math.round(squad.count)}`, 0, 52);
+      ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 2; ctx.stroke();
+      ctx.fillStyle = '#fff'; ctx.font = '900 14px Arial Black'; ctx.textAlign = 'center'; ctx.fillText(`x${Math.round(squad.count)}`, 0, 52);
+      ctx.restore();
       ctx.restore();
 
-      ctx.restore();
+      for (let p of entities.particles) { ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill(); }
+      for (let t of entities.texts) {
+        ctx.save(); ctx.translate(t.x, t.y); ctx.scale(1, -1);
+        ctx.fillStyle = t.color; ctx.strokeStyle = '#000'; ctx.lineWidth = 3;
+        ctx.font = '900 20px Arial Black'; ctx.textAlign = 'center'; ctx.strokeText(t.str, 0, 0); ctx.fillText(t.str, 0, 0);
+        ctx.restore();
+      }
+
+      ctx.restore(); ctx.restore();
     }
 
-    function victory() {
-      state = 'VICTORY';
-      document.getElementById('endTitle').innerText = 'STAGE CLEAR!';
-      document.getElementById('endTitle').style.color = '#38bdf8';
-      document.getElementById('endDesc').innerText = `Aura Maintained: ✨ ${aura >= 0 ? '+' : ''}${Math.round(aura)}`;
-      document.getElementById('nextBtn').innerText = "NEXT ZONE";
-      document.getElementById('endModal').style.display = 'flex';
-    }
-
-    function gameOver() {
-      state = 'GAMEOVER';
-      document.getElementById('endTitle').innerText = 'CRASHED OUT!';
-      document.getElementById('endTitle').style.color = '#ef4444';
-      document.getElementById('endDesc').innerText = 'Your squad was wiped out!';
-      document.getElementById('nextBtn').innerText = "RETRY";
-      document.getElementById('endModal').style.display = 'flex';
-    }
-
-    function nextLevel() {
-      if (state === 'VICTORY') level++;
-      initLevel();
-    }
-
+    function victory() { state = 'VICTORY'; document.getElementById('endTitle').innerText = 'STAGE CLEAR!'; document.getElementById('endTitle').style.color = '#38bdf8'; document.getElementById('endDesc').innerText = `Aura Maintained: ✨ ${aura >= 0 ? '+' : ''}${Math.round(aura)}`; document.getElementById('nextBtn').innerText = "NEXT ZONE"; document.getElementById('endModal').style.display = 'flex'; }
+    function gameOver() { state = 'GAMEOVER'; document.getElementById('endTitle').innerText = 'CRASHED OUT!'; document.getElementById('endTitle').style.color = '#ef4444'; document.getElementById('endDesc').innerText = 'Your squad was wiped out!'; document.getElementById('nextBtn').innerText = "RETRY"; document.getElementById('endModal').style.display = 'flex'; }
+    function nextLevel() { if (state === 'VICTORY') level++; initLevel(); }
+    
     requestAnimationFrame(loop);
   </script>
 </body>
 </html>
-
