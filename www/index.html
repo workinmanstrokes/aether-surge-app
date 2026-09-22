@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Brainrot 2025: Aura Rush</title>
+  <title>Brainrot Evolution: Ultimate Rush</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; touch-action: none; }
-    body, html { width: 100%; height: 100%; overflow: hidden; background: #020617; font-family: 'Arial Black', Impact, sans-serif; }
+    body, html { width: 100%; height: 100%; overflow: hidden; background: #0f172a; font-family: 'Arial Black', Impact, sans-serif; }
     canvas#gameCanvas { display: block; width: 100vw; height: 100vh; }
     
     #ui { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: none; }
@@ -17,10 +17,10 @@
     .badge { background: rgba(15, 23, 42, 0.92); padding: 8px 16px; border-radius: 20px; border: 2px solid #38bdf8; box-shadow: 0 4px 14px rgba(56, 189, 248, 0.4); display: flex; align-items: center; gap: 6px; }
     
     /* Progress Bar */
-    .progress-container { width: 100%; height: 12px; background: rgba(15,23,42,0.8); border: 2px solid #334155; border-radius: 8px; overflow: hidden; position: relative; }
-    .progress-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #facc15, #f59e0b); box-shadow: 0 0 10px #facc15; transition: width 0.1s linear; }
+    .progress-container { width: 100%; height: 14px; background: rgba(15,23,42,0.9); border: 2px solid #334155; border-radius: 8px; overflow: hidden; position: relative; }
+    .progress-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #38bdf8, #818cf8, #c084fc); box-shadow: 0 0 10px #818cf8; transition: width 0.1s linear; }
     
-    .tier-announcement { position: absolute; top: 90px; left: 50%; transform: translateX(-50%); color: #facc15; font-size: 18px; text-shadow: 0 3px 0 #854d0e, 0 0 14px rgba(250, 204, 21, 0.7); text-transform: uppercase; letter-spacing: 1px; white-space: nowrap; transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+    .tier-announcement { position: absolute; top: 90px; left: 50%; transform: translateX(-50%); color: #facc15; font-size: 18px; text-shadow: 0 3px 0 #854d0e, 0 0 14px rgba(250, 204, 21, 0.7); text-transform: uppercase; letter-spacing: 1px; white-space: nowrap; transition: transform 0.2s; }
     .tier-pop { transform: translateX(-50%) scale(1.3) !important; color: #fff !important; text-shadow: 0 0 20px #38bdf8 !important; }
 
     /* Modals & Screens */
@@ -35,6 +35,12 @@
     .btn:active { transform: scale(0.95); box-shadow: 0 4px 10px rgba(56, 189, 248, 0.5); }
     
     #hint { position: absolute; bottom: 15%; left: 50%; transform: translateX(-50%); color: #fff; font-size: 18px; letter-spacing: 2px; animation: pulse 1s infinite alternate; text-shadow: 0 2px 4px #000; }
+    
+    /* Boss HP Bar */
+    #bossUI { position: absolute; top: 130px; left: 50%; transform: translateX(-50%); width: 80%; display: none; flex-direction: column; align-items: center; gap: 8px; }
+    #bossUI span { color: #ef4444; font-size: 18px; text-shadow: 0 2px 4px #000; letter-spacing: 2px; }
+    .boss-hp-container { width: 100%; height: 16px; background: rgba(0,0,0,0.8); border: 2px solid #7f1d1d; border-radius: 8px; overflow: hidden; }
+    .boss-hp-fill { height: 100%; width: 100%; background: linear-gradient(90deg, #ef4444, #dc2626); transition: width 0.1s; }
   </style>
 </head>
 <body>
@@ -45,32 +51,38 @@
       <div class="progress-container"><div class="progress-fill" id="progressBar"></div></div>
       <div class="stats-row">
         <div class="badge" id="levelBadge">ZONE 1</div>
-        <div class="badge" style="border-color:#facc15;" id="auraBadge">✨ 0 AURA</div>
+        <div class="badge" style="border-color:#facc15;" id="auraBadge">✨ 0 SCORE (AURA)</div>
       </div>
     </div>
-    <div class="tier-announcement" id="tierBadge">TIER 1: CHICKEN JOCKEY</div>
+    
+    <div id="bossUI">
+      <span>FINAL BOSS 👹</span>
+      <div class="boss-hp-container"><div class="boss-hp-fill" id="bossHpBar"></div></div>
+    </div>
+
+    <div class="tier-announcement" id="tierBadge">TIER 1: SKIBIDI</div>
     <div id="hint">⟵ DRAG TO STEER ⟶</div>
   </div>
 
   <div id="startModal" class="modal">
     <div class="card">
-      <h1 style="color:#facc15; text-shadow:0 4px 0 #a16207; border-color:#facc15;">AURA RUSH</h1>
-      <p>Build your Brainrot Squad.<br>Shoot Gates to increase value.<br>Dodge Barrels or Crash Out!</p>
+      <h1 style="color:#facc15; text-shadow:0 4px 0 #a16207; border-color:#facc15;">BRAINROT RUSH</h1>
+      <p>Pass green math gates.<br>Dodge red negative gates.<br>Defeat moving enemies and the Final Boss!</p>
       <button class="btn" style="background: linear-gradient(180deg, #facc15 0%, #ca8a04 100%); border-color:#fef08a;" onclick="startGame()">TAP TO START</button>
     </div>
   </div>
 
   <div id="endModal" class="modal" style="display:none;">
     <div class="card">
-      <h1 id="endTitle">INFINITE AURA!</h1>
-      <p id="endDesc">You survived the crash out!</p>
+      <h1 id="endTitle">STAGE CLEAR!</h1>
+      <p id="endDesc">Boss Defeated!</p>
       <button class="btn" id="nextBtn" onclick="nextLevel()">CONTINUE</button>
     </div>
   </div>
 
   <script>
     const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d', { alpha: false }); // Optimize rendering
+    const ctx = canvas.getContext('2d', { alpha: false });
 
     function resize() {
       canvas.width = window.innerWidth;
@@ -79,7 +91,7 @@
     window.addEventListener('resize', resize);
     resize();
 
-    // ----- AUDIO ENGINE (Procedural Web Audio) -----
+    // ----- AUDIO ENGINE -----
     const AudioContext = window.AudioContext || window.webkitAudioContext;
     let actx;
     
@@ -98,28 +110,28 @@
 
       if (type === 'shoot') {
         osc.type = 'square';
-        osc.frequency.setValueAtTime(400, now);
-        osc.frequency.exponentialRampToValueAtTime(100, now + 0.1);
-        gain.gain.setValueAtTime(0.05, now);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
-        osc.start(now); osc.stop(now + 0.1);
+        osc.frequency.setValueAtTime(500, now);
+        osc.frequency.exponentialRampToValueAtTime(200, now + 0.08);
+        gain.gain.setValueAtTime(0.03, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+        osc.start(now); osc.stop(now + 0.08);
       } else if (type === 'hit') {
         osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(150, now);
-        osc.frequency.exponentialRampToValueAtTime(40, now + 0.15);
+        osc.frequency.setValueAtTime(200, now);
+        osc.frequency.exponentialRampToValueAtTime(50, now + 0.1);
         gain.gain.setValueAtTime(0.1, now);
-        gain.gain.linearRampToValueAtTime(0, now + 0.15);
-        osc.start(now); osc.stop(now + 0.15);
-      } else if (type === 'coin') {
+        gain.gain.linearRampToValueAtTime(0, now + 0.1);
+        osc.start(now); osc.stop(now + 0.1);
+      } else if (type === 'powerup') {
         osc.type = 'sine';
-        osc.frequency.setValueAtTime(900, now);
-        osc.frequency.setValueAtTime(1200, now + 0.05);
+        osc.frequency.setValueAtTime(800, now);
+        osc.frequency.setValueAtTime(1400, now + 0.1);
         gain.gain.setValueAtTime(0.1, now);
         gain.gain.linearRampToValueAtTime(0, now + 0.3);
         osc.start(now); osc.stop(now + 0.3);
       } else if (type === 'damage') {
         osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(100, now);
+        osc.frequency.setValueAtTime(120, now);
         osc.frequency.exponentialRampToValueAtTime(20, now + 0.3);
         gain.gain.setValueAtTime(0.2, now);
         gain.gain.linearRampToValueAtTime(0, now + 0.3);
@@ -128,33 +140,29 @@
     }
 
     // ----- GAME STATE -----
-    let state = 'START';
+    let state = 'START'; // START, PLAYING, BOSS, VICTORY, GAMEOVER
     let level = 1;
     let aura = 0;
     let trackProgress = 0;
     let trackLength = 5000;
-    let runSpeed = 220;
+    let runSpeed = 230;
     let screenShake = 0;
 
     const squad = {
-      x: 0,
-      targetX: 0, // For smooth lerping
-      count: 4,
-      fireRate: 4.5,
-      fireRange: 480,
-      shootTimer: 0,
-      tier: 0
+      x: 0, targetX: 0, count: 4, fireRate: 4.0, fireRange: 500, shootTimer: 0, tier: 0
     };
 
+    // Authentic Emojis for Brainrot Tiers & Projectiles
     const TIERS = [
-      { minCount: 1, name: "TIER 1: CHICKEN JOCKEY", bulletColor: "#facc15", fireMult: 1.0 },
-      { minCount: 10, name: "TIER 2: BOMBADILLO CROCODILLO", bulletColor: "#22c55e", fireMult: 1.4 },
-      { minCount: 25, name: "TIER 3: CLANKER PROTOCOL", bulletColor: "#ef4444", fireMult: 1.9 },
-      { minCount: 50, name: "TIER 4: BIG BACK CRASH OUT", bulletColor: "#ec4899", fireMult: 2.6 },
-      { minCount: 100, name: "TIER 5: 100 MEN VS 1 GORILLA", bulletColor: "#38bdf8", fireMult: 3.8 }
+      { minCount: 1, name: "TIER 1: SKIBIDI 🚽", emoji: "🚽", bullet: "💧", color: "#64748b", fireMult: 1.0 },
+      { minCount: 10, name: "TIER 2: SMURF CAT 🍄", emoji: "🍄", bullet: "🔵", color: "#0ea5e9", fireMult: 1.5 },
+      { minCount: 25, name: "TIER 3: GRIMACE 🟣", emoji: "🟣", bullet: "🟣", color: "#9333ea", fireMult: 2.0 },
+      { minCount: 50, name: "TIER 4: SIGMA 🗿", emoji: "🗿", bullet: "⚡", color: "#64748b", fireMult: 2.8 },
+      { minCount: 100, name: "TIER 5: GORILLA KING 🦍", emoji: "🦍", bullet: "🔥", color: "#f59e0b", fireMult: 4.0 }
     ];
 
-    const entities = { bullets: [], gates: [], pods: [], barrels: [], particles: [], texts: [] };
+    const entities = { bullets: [], gates: [], enemies: [], particles: [], texts: [] };
+    let boss = null;
 
     // ----- CONTROLS -----
     let dragging = false;
@@ -162,17 +170,17 @@
     let squadStartX = 0;
 
     function onPointerDown(e) {
-      if (state !== 'PLAYING') return;
+      if (state !== 'PLAYING' && state !== 'BOSS') return;
       dragging = true;
       dragStartX = e.touches ? e.touches[0].clientX : e.clientX;
       squadStartX = squad.targetX;
       document.getElementById('hint').style.display = 'none';
     }
     function onPointerMove(e) {
-      if (!dragging || state !== 'PLAYING') return;
+      if (!dragging) return;
       const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-      const dx = (clientX - dragStartX) * 1.5; // Sensitivity multiplier
-      squad.targetX = Math.max(-140, Math.min(140, squadStartX + dx));
+      const dx = (clientX - dragStartX) * 1.5;
+      squad.targetX = Math.max(-145, Math.min(145, squadStartX + dx));
     }
     function onPointerUp() { dragging = false; }
 
@@ -190,18 +198,35 @@
       initLevel();
     }
 
+    function generateGateAction(isBad) {
+      const types = ['SQUAD_ADD', 'SQUAD_MULT', 'AURA', 'FIRE_RATE'];
+      const type = types[Math.floor(Math.random() * types.length)];
+      
+      if (isBad) {
+        if (type === 'SQUAD_ADD') return { text: `-5 SQUAD`, type: 'SQUAD_ADD', val: -5 };
+        if (type === 'SQUAD_MULT') return { text: `÷2 SQUAD (DIVIDE)`, type: 'SQUAD_MULT', val: 0.5 };
+        if (type === 'AURA') return { text: `-150 SCORE (AURA)`, type: 'AURA', val: -150 };
+        if (type === 'FIRE_RATE') return { text: `FIRE RATE DOWN`, type: 'FIRE_RATE', val: -0.5 };
+      } else {
+        if (type === 'SQUAD_ADD') return { text: `+${Math.floor(Math.random()*10)+5} SQUAD`, type: 'SQUAD_ADD', val: Math.floor(Math.random()*10)+5 };
+        if (type === 'SQUAD_MULT') return { text: `x2 SQUAD (CLONES)`, type: 'SQUAD_MULT', val: 2 };
+        if (type === 'AURA') return { text: `+250 SCORE (AURA)`, type: 'AURA', val: 250 };
+        if (type === 'FIRE_RATE') return { text: `FIRE RATE UP`, type: 'FIRE_RATE', val: 0.8 };
+      }
+      return { text: `+5 SQUAD`, type: 'SQUAD_ADD', val: 5 };
+    }
+
     function initLevel() {
       state = 'PLAYING';
       trackProgress = 0;
-      trackLength = 4000 + (level * 800);
-      runSpeed = 220 + (level * 5);
+      trackLength = 4500 + (level * 800);
+      runSpeed = 230 + (level * 10);
       
-      squad.x = 0;
-      squad.targetX = 0;
-      squad.count = 4;
+      squad.x = 0; squad.targetX = 0; squad.count = 4; squad.fireRate = 4.0;
       
       for(let key in entities) entities[key].length = 0;
-      
+      boss = null;
+      document.getElementById('bossUI').style.display = 'none';
       document.getElementById('endModal').style.display = 'none';
       document.getElementById('levelBadge').innerText = `ZONE ${level}`;
       updateAuraUI();
@@ -210,53 +235,49 @@
       while (y < trackLength - 600) {
         const r = Math.random();
         if (r < 0.45) {
-          // Gates
-          const leftVal = Math.floor(Math.random() * 8) + 3;
-          const rightBad = Math.random() < 0.35;
-          const rightVal = rightBad ? -(Math.floor(Math.random() * 300) + 100) : (Math.floor(Math.random() * 500) + 150);
+          // Gates (Math & Upgrades)
+          const isRightBad = Math.random() < 0.4;
+          const leftAction = generateGateAction(false);
+          const rightAction = generateGateAction(isRightBad);
           entities.gates.push({
             y: y,
-            left: { x: -70, text: `+${leftVal} UNCS`, val: leftVal, type: 'COUNT', hp: 20, maxHp: 20 },
-            right: { x: 70, text: rightBad ? `${rightVal} AURA` : `+${rightVal} AURA`, val: rightVal, type: 'AURA', hp: 30, maxHp: 30, isBad: rightBad },
+            left: { x: -75, ...leftAction, hp: 25, isBad: false },
+            right: { x: 75, ...rightAction, hp: 25, isBad: isRightBad },
             active: true
           });
-          y += 500;
-        } else if (r < 0.7) {
-          // Pod
-          entities.pods.push({
-            x: (Math.random() - 0.5) * 180, y: y,
-            hp: 25 + level*5, maxHp: 25 + level*5, bonus: 3 + Math.floor(Math.random() * 5),
-            active: true, hitTime: 0
-          });
-          y += 400;
+          y += 550;
         } else {
-          // Barrels
+          // Enemies: Obstacle Barrels (🛢️) or Moving Bots (👾)
+          const isBotRow = Math.random() < 0.5;
           for (let b = 0; b < 3; b++) {
-            entities.barrels.push({
-              x: -90 + b * 90, y: y,
-              hp: 40 + level * 10, maxHp: 40 + level * 10, aura: 200,
+            entities.enemies.push({
+              x: -100 + b * 100, y: y,
+              hp: 40 + level * 10, maxHp: 40 + level * 10,
+              type: isBotRow ? 'BOT' : 'BARREL',
+              emoji: isBotRow ? '👾' : '🛢️',
+              aura: isBotRow ? 100 : 50,
               active: true, hitTime: 0
             });
           }
           y += 450;
         }
       }
+    }
 
-      // Boss Finish Line
-      for (let r = 0; r < 5; r++) {
-        for (let c = 0; c < 4; c++) {
-          entities.barrels.push({
-            x: -105 + c * 70, y: trackLength + r * 70,
-            hp: 80 + r * 40 + (level*15), maxHp: 80 + r * 40 + (level*15),
-            aura: 500, isFinish: true, active: true, hitTime: 0
-          });
-        }
-      }
+    function spawnBoss() {
+      state = 'BOSS';
+      boss = {
+        x: 0, y: trackProgress + 550,
+        hp: 1500 + (level * 500), maxHp: 1500 + (level * 500),
+        emoji: '👹', moveTimer: 0, hitTime: 0, active: true
+      };
+      document.getElementById('bossUI').style.display = 'flex';
+      runSpeed = 60; // Slow down track dramatically for boss fight
     }
 
     function updateAuraUI() {
       const badge = document.getElementById('auraBadge');
-      badge.innerText = `✨ ${aura >= 0 ? '+' : ''}${Math.round(aura)} AURA`;
+      badge.innerText = `✨ ${aura >= 0 ? '+' : ''}${Math.round(aura)} SCORE (AURA)`;
       badge.style.color = aura < 0 ? '#ef4444' : '#fff';
       badge.style.borderColor = aura < 0 ? '#ef4444' : '#facc15';
     }
@@ -276,25 +297,29 @@
     }
 
     function addFloatText(x, y, str, color) {
-      entities.texts.push({ x, y, str, color, life: 0.6, vy: 60 });
+      entities.texts.push({ x, y, str, color, life: 0.7, vy: 60 });
     }
 
     let lastTime = performance.now();
     function loop(now) {
       const dt = Math.min((now - lastTime) / 1000, 0.05);
       lastTime = now;
-      if (state === 'PLAYING') update(dt);
+      if (state === 'PLAYING' || state === 'BOSS') update(dt);
       render();
       requestAnimationFrame(loop);
     }
 
     function update(dt) {
       trackProgress += runSpeed * dt;
-      document.getElementById('progressBar').style.width = `${Math.min(100, (trackProgress / trackLength) * 100)}%`;
+      if (state === 'PLAYING') {
+        document.getElementById('progressBar').style.width = `${Math.min(100, (trackProgress / trackLength) * 100)}%`;
+        if (trackProgress > trackLength) spawnBoss();
+      }
 
-      // Smooth steering (Lerp)
+      // Smooth steering
       squad.x += (squad.targetX - squad.x) * 15 * dt;
 
+      // Update Tier
       const oldTier = squad.tier;
       for (let i = TIERS.length - 1; i >= 0; i--) {
         if (squad.count >= TIERS[i].minCount) { squad.tier = i; break; }
@@ -314,66 +339,90 @@
       if (squad.shootTimer >= interval) {
         squad.shootTimer = 0;
         playSound('shoot');
-        const numBullets = Math.min(squad.count, Math.min(5 + squad.tier, 12));
+        const numBullets = Math.min(squad.count, Math.min(5 + squad.tier * 2, 14));
         for (let i = 0; i < numBullets; i++) {
           const spread = (i - (numBullets - 1) / 2) * 12;
           entities.bullets.push({
             x: squad.x + spread, y: trackProgress + 45,
-            vy: 800, dmg: 6 + squad.tier * 4, color: tInfo.bulletColor, life: squad.fireRange / 800
+            vy: 850, dmg: 8 + squad.tier * 5, emoji: tInfo.bullet, color: tInfo.color, life: squad.fireRange / 850
           });
+        }
+      }
+
+      // Boss Logic
+      if (state === 'BOSS' && boss.active) {
+        boss.y = trackProgress + 400; // Keep boss ahead of player
+        boss.moveTimer += dt * 2.5;
+        boss.x = Math.sin(boss.moveTimer) * 110; // Sweep side to side
+        document.getElementById('bossHpBar').style.width = `${Math.max(0, (boss.hp / boss.maxHp) * 100)}%`;
+
+        if (Math.hypot(squad.x - boss.x, trackProgress - boss.y) < 70) {
+          boss.active = false;
+          squad.count = 0; // Boss crushes you instantly if you touch him
+          gameOver();
+          return;
+        }
+      }
+
+      // Update Enemies (Bots move down)
+      for (let e of entities.enemies) {
+        if (!e.active) continue;
+        if (e.type === 'BOT') e.y -= 50 * dt; // Bots walk towards player
+        
+        if (Math.hypot(squad.x - e.x, trackProgress - e.y) < 40) {
+          e.active = false;
+          squad.count -= Math.floor(e.maxHp / 10);
+          triggerShake(12); playSound('damage');
+          spawnExplosion(e.x, e.y, '#ef4444', 20);
+          if (squad.count <= 0) { gameOver(); return; }
         }
       }
 
       // Update Bullets
       for (let i = entities.bullets.length - 1; i >= 0; i--) {
         const b = entities.bullets[i];
-        b.y += b.vy * dt;
-        b.life -= dt;
+        b.y += b.vy * dt; b.life -= dt;
         let hit = false;
 
         // Hit Gates
         for (let g of entities.gates) {
           if (!g.active || hit) continue;
           if (Math.abs(b.y - g.y) < 25) {
-            if (b.x < 0 && Math.abs(b.x - g.left.x) < 60) {
-              if (g.left.type === 'COUNT') g.left.val += 0.3;
+            if (b.x < 0 && Math.abs(b.x - g.left.x) < 70) {
+              if (g.left.type === 'SQUAD_ADD' && !g.left.isBad) g.left.val += 0.2;
               g.left.hitTime = 0.1; hit = true;
-            } else if (b.x > 0 && Math.abs(b.x - g.right.x) < 60) {
-              if (!g.right.isBad) g.right.val += 25;
+            } else if (b.x > 0 && Math.abs(b.x - g.right.x) < 70) {
+              if (g.right.type === 'SQUAD_ADD' && !g.right.isBad) g.right.val += 0.2;
               g.right.hitTime = 0.1; hit = true;
             }
           }
         }
 
-        // Hit Pods
-        for (let p of entities.pods) {
-          if (!p.active || hit) continue;
-          if (Math.hypot(b.x - p.x, b.y - p.y) < 32) {
-            p.hp -= b.dmg; p.hitTime = 0.1; hit = true;
-            spawnExplosion(b.x, b.y, '#38bdf8', 2);
-            if (p.hp <= 0) {
-              p.active = false;
-              squad.count += p.bonus;
-              playSound('coin');
-              addFloatText(p.x, p.y, `+${p.bonus} RESCUED!`, '#38bdf8');
-              spawnExplosion(p.x, p.y, '#38bdf8', 20);
+        // Hit Enemies
+        for (let e of entities.enemies) {
+          if (!e.active || hit) continue;
+          if (Math.hypot(b.x - e.x, b.y - e.y) < 36) {
+            e.hp -= b.dmg; e.hitTime = 0.1; hit = true;
+            spawnExplosion(b.x, b.y, b.color, 2);
+            if (e.hp <= 0) {
+              e.active = false; aura += e.aura; updateAuraUI(); playSound('powerup');
+              addFloatText(e.x, e.y, `+${e.aura} SCORE`, '#facc15');
+              spawnExplosion(e.x, e.y, '#f59e0b', 16);
             }
           }
         }
 
-        // Hit Barrels
-        for (let bar of entities.barrels) {
-          if (!bar.active || hit) continue;
-          if (Math.hypot(b.x - bar.x, b.y - bar.y) < 30) {
-            bar.hp -= b.dmg; bar.hitTime = 0.1; hit = true;
-            spawnExplosion(b.x, b.y, '#f59e0b', 2);
-            if (bar.hp <= 0) {
-              bar.active = false;
-              aura += bar.aura;
-              updateAuraUI();
-              playSound('coin');
-              addFloatText(bar.x, bar.y, `+${bar.aura} AURA`, '#facc15');
-              spawnExplosion(bar.x, bar.y, bar.isFinish ? '#ec4899' : '#f59e0b', 16);
+        // Hit Boss
+        if (state === 'BOSS' && boss.active && !hit) {
+          if (Math.hypot(b.x - boss.x, b.y - boss.y) < 65) {
+            boss.hp -= b.dmg; boss.hitTime = 0.1; hit = true;
+            spawnExplosion(b.x, b.y, b.color, 3);
+            if (boss.hp <= 0) {
+              boss.active = false;
+              aura += 2000; updateAuraUI();
+              playSound('powerup');
+              spawnExplosion(boss.x, boss.y, '#facc15', 50);
+              victory();
             }
           }
         }
@@ -384,61 +433,45 @@
         }
       }
 
-      // Collision logic
+      // Check Gate pass
       for (let g of entities.gates) {
         if (!g.active) continue;
         if (trackProgress >= g.y && trackProgress - runSpeed * dt < g.y) {
           g.active = false;
           const chosen = squad.x < 0 ? g.left : g.right;
-          if (chosen.type === 'COUNT') {
+          
+          if (chosen.type === 'SQUAD_ADD') {
             squad.count = Math.max(1, squad.count + Math.round(chosen.val));
-            addFloatText(squad.x, g.y, `+${Math.round(chosen.val)} SQUAD!`, '#22c55e');
-          } else {
-            aura += Math.round(chosen.val);
-            updateAuraUI();
-            addFloatText(squad.x, g.y, `${chosen.val > 0 ? '+' : ''}${Math.round(chosen.val)} AURA!`, chosen.val > 0 ? '#38bdf8' : '#ef4444');
+          } else if (chosen.type === 'SQUAD_MULT') {
+            squad.count = Math.max(1, Math.round(squad.count * chosen.val));
+          } else if (chosen.type === 'AURA') {
+            aura += chosen.val; updateAuraUI();
+          } else if (chosen.type === 'FIRE_RATE') {
+            squad.fireRate += chosen.val;
           }
-          playSound('coin');
-          spawnExplosion(chosen.x, g.y, '#38bdf8', 25);
+          
+          playSound('powerup');
+          addFloatText(squad.x, g.y, chosen.text, chosen.isBad ? '#ef4444' : '#38bdf8');
+          spawnExplosion(chosen.x, g.y, chosen.isBad ? '#ef4444' : '#38bdf8', 25);
         }
       }
 
-      for (let bar of entities.barrels) {
-        if (!bar.active) continue;
-        if (Math.hypot(squad.x - bar.x, trackProgress - bar.y) < 38) {
-          bar.active = false;
-          squad.count -= 3;
-          aura -= 250;
-          updateAuraUI();
-          triggerShake(12);
-          playSound('damage');
-          spawnExplosion(bar.x, bar.y, '#ef4444', 20);
-          if (squad.count <= 0) {
-            gameOver(); return;
-          }
-        }
-      }
-
-      // Update Particles & Texts
+      // Particles & Texts
       for (let i = entities.particles.length - 1; i >= 0; i--) {
         const p = entities.particles[i];
         p.x += p.vx * dt; p.y += p.vy * dt;
-        p.vx *= 0.95; p.vy *= 0.95; // friction
+        p.vx *= 0.95; p.vy *= 0.95; 
         p.life -= dt;
         if (p.life <= 0) { entities.particles[i] = entities.particles[entities.particles.length - 1]; entities.particles.pop(); }
       }
-
       for (let i = entities.texts.length - 1; i >= 0; i--) {
         const t = entities.texts[i];
         t.y += t.vy * dt; t.life -= dt;
         if (t.life <= 0) { entities.texts[i] = entities.texts[entities.texts.length - 1]; entities.texts.pop(); }
       }
 
-      // Screen shake decay
       if (screenShake > 0) screenShake -= dt * 40;
       if (screenShake < 0) screenShake = 0;
-
-      if (trackProgress > trackLength + 400) victory();
     }
 
     // ----- RENDERING -----
@@ -450,17 +483,14 @@
       const cy = canvas.height * 0.78;
 
       ctx.save();
-      // Apply screen shake
-      if (screenShake > 0) {
-        ctx.translate((Math.random() - 0.5) * screenShake, (Math.random() - 0.5) * screenShake);
-      }
+      if (screenShake > 0) ctx.translate((Math.random() - 0.5) * screenShake, (Math.random() - 0.5) * screenShake);
       ctx.translate(cx, cy);
 
       // Track floor
-      const roadW = 340;
+      const roadW = 360;
       ctx.fillStyle = '#1e293b';
       ctx.fillRect(-roadW / 2, -cy, roadW, canvas.height);
-      ctx.fillStyle = '#0284c7';
+      ctx.fillStyle = '#0ea5e9';
       ctx.fillRect(-roadW / 2 - 6, -cy, 6, canvas.height);
       ctx.fillRect(roadW / 2, -cy, 6, canvas.height);
 
@@ -477,51 +507,71 @@
       ctx.scale(1, -1);
       ctx.translate(0, -trackProgress);
 
-      // Render world entities
+      // Gates (Forcefield style)
       for (let g of entities.gates) {
         if (!g.active) continue;
         if (g.left.hitTime > 0) g.left.hitTime -= 0.016;
         if (g.right.hitTime > 0) g.right.hitTime -= 0.016;
-        drawVoxelGate(g.left, g.y, g.left.isBad ? '#ef4444' : '#22c55e', g.left.hitTime > 0);
-        drawVoxelGate(g.right, g.y, g.right.isBad ? '#ef4444' : '#38bdf8', g.right.hitTime > 0);
+        drawGate(g.left, g.y, g.left.isBad ? '#ef4444' : '#22c55e', g.left.hitTime > 0);
+        drawGate(g.right, g.y, g.right.isBad ? '#ef4444' : '#38bdf8', g.right.hitTime > 0);
       }
 
-      for (let p of entities.pods) {
-        if (!p.active) continue;
-        if (p.hitTime > 0) p.hitTime -= 0.016;
-        const color = p.hitTime > 0 ? '#ffffff' : '#0284c7';
-        // Draw shadow
-        drawShadow(ctx, p.x, p.y, 40);
-        drawVoxel(ctx, p.x, p.y, 0, 36, 36, 36, color);
-        drawVoxel(ctx, p.x, p.y, 36, 24, 24, 24, '#38bdf8');
-      }
-
-      for (let bar of entities.barrels) {
-        if (!bar.active) continue;
-        if (bar.hitTime > 0) bar.hitTime -= 0.016;
-        const baseColor = bar.isFinish ? '#ec4899' : '#f59e0b';
-        const color = bar.hitTime > 0 ? '#ffffff' : baseColor;
-        drawShadow(ctx, bar.x, bar.y, 40);
-        drawVoxel(ctx, bar.x, bar.y, 0, 34, 34, 34, color);
-
+      // Enemies (Emojis)
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      for (let e of entities.enemies) {
+        if (!e.active) continue;
+        if (e.hitTime > 0) e.hitTime -= 0.016;
+        
+        drawShadow(ctx, e.x, e.y, 40);
         ctx.save();
+        ctx.translate(e.x, e.y);
         ctx.scale(1, -1);
-        ctx.fillStyle = '#fff'; ctx.font = '900 16px Arial Black'; ctx.textAlign = 'center';
-        ctx.fillText(Math.ceil(bar.hp), bar.x, -bar.y - 12);
+        if (e.hitTime > 0) ctx.filter = 'brightness(2)'; // Hit flash
+        ctx.font = '45px Arial';
+        ctx.fillText(e.emoji, 0, 0);
+        ctx.restore();
+
+        // HP Bar
+        ctx.save(); ctx.translate(e.x, e.y); ctx.scale(1, -1);
+        ctx.fillStyle = '#000'; ctx.fillRect(-20, -35, 40, 8);
+        ctx.fillStyle = '#ef4444'; ctx.fillRect(-20, -35, 40 * (e.hp/e.maxHp), 8);
         ctx.restore();
       }
 
-      for (let b of entities.bullets) {
-        drawShadow(ctx, b.x, b.y, 8);
-        drawVoxel(ctx, b.x, b.y, 12, 6, 12, 6, b.color);
+      // Boss
+      if (state === 'BOSS' && boss && boss.active) {
+        if (boss.hitTime > 0) boss.hitTime -= 0.016;
+        drawShadow(ctx, boss.x, boss.y, 80);
+        ctx.save();
+        ctx.translate(boss.x, boss.y);
+        ctx.scale(1, -1);
+        if (boss.hitTime > 0) ctx.filter = 'brightness(2)';
+        ctx.font = '90px Arial';
+        ctx.fillText(boss.emoji, 0, 0);
+        ctx.restore();
       }
 
+      // Bullets (Emojis)
+      for (let b of entities.bullets) {
+        ctx.save();
+        ctx.translate(b.x, b.y);
+        ctx.scale(1, -1);
+        ctx.font = '20px Arial';
+        ctx.fillText(b.emoji, 0, 0);
+        ctx.restore();
+      }
+
+      // Player Squad Formations (Emojis)
       drawSquad();
 
+      // Particles
       for (let p of entities.particles) {
-        drawVoxel(ctx, p.x, p.y, 5, p.size, p.size, p.size, p.color);
+        ctx.fillStyle = p.color;
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill();
       }
 
+      // Float Texts
       for (let t of entities.texts) {
         ctx.save(); ctx.translate(t.x, t.y); ctx.scale(1, -1);
         ctx.fillStyle = t.color; ctx.strokeStyle = '#000'; ctx.lineWidth = 3;
@@ -535,80 +585,73 @@
     }
 
     function drawShadow(ctx, x, y, radius) {
-      ctx.fillStyle = 'rgba(0,0,0,0.4)';
-      ctx.beginPath(); ctx.ellipse(x, y - radius*0.3, radius, radius*0.4, 0, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = 'rgba(0,0,0,0.5)';
+      ctx.beginPath(); ctx.ellipse(x, y - radius*0.2, radius, radius*0.3, 0, 0, Math.PI*2); ctx.fill();
     }
 
-    function drawVoxel(ctx, x, y, z, w, h, d, hexColor) {
-      const isoX = x; const isoY = y - z;
-      // Top
-      ctx.fillStyle = hexColor; ctx.beginPath(); ctx.moveTo(isoX, isoY - h); ctx.lineTo(isoX + w/2, isoY - h - d/3); ctx.lineTo(isoX, isoY - h - (2*d)/3); ctx.lineTo(isoX - w/2, isoY - h - d/3); ctx.closePath(); ctx.fill();
-      // Right
-      ctx.fillStyle = adjustBrightness(hexColor, -25); ctx.beginPath(); ctx.moveTo(isoX, isoY - h); ctx.lineTo(isoX + w/2, isoY - h - d/3); ctx.lineTo(isoX + w/2, isoY - d/3); ctx.lineTo(isoX, isoY); ctx.closePath(); ctx.fill();
-      // Left
-      ctx.fillStyle = adjustBrightness(hexColor, -45); ctx.beginPath(); ctx.moveTo(isoX, isoY - h); ctx.lineTo(isoX - w/2, isoY - h - d/3); ctx.lineTo(isoX - w/2, isoY - d/3); ctx.lineTo(isoX, isoY); ctx.closePath(); ctx.fill();
-    }
-
-    function adjustBrightness(hex, percent) {
-      let num = parseInt(hex.replace("#",""), 16), amt = Math.round(2.55 * percent);
-      let R = (num >> 16) + amt, G = (num >> 8 & 0x00FF) + amt, B = (num & 0x0000FF) + amt;
-      return "#" + (0x1000000 + (R<255?R<1?0:R:255)*0x10000 + (G<255?G<1?0:G:255)*0x100 + (B<255?B<1?0:B:255)).toString(16).slice(1);
-    }
-
-    function drawVoxelGate(side, y, color, isHit) {
+    function drawGate(side, y, color, isHit) {
       ctx.save(); ctx.translate(side.x, y);
-      drawShadow(ctx, 0, 0, 95);
-      drawVoxel(ctx, 0, 0, 0, 100, 12, 12, isHit ? '#ffffff' : color);
+      
+      // Forcefield glass effect
+      ctx.fillStyle = isHit ? '#ffffff' : color;
+      ctx.globalAlpha = isHit ? 0.9 : 0.4;
+      ctx.fillRect(-85, -5, 170, 10);
+      
+      ctx.globalAlpha = 1.0;
+      ctx.strokeStyle = isHit ? '#ffffff' : color;
+      ctx.lineWidth = 4;
+      ctx.strokeRect(-85, -5, 170, 10);
+      
+      // Floating text above gate
       ctx.save(); ctx.scale(1, -1);
-      ctx.fillStyle = '#ffffff'; ctx.strokeStyle = '#000000'; ctx.lineWidth = 3;
-      ctx.font = '900 14px Arial Black'; ctx.textAlign = 'center';
-      ctx.strokeText(side.text, 0, 5); ctx.fillText(side.text, 0, 5);
+      ctx.fillStyle = '#ffffff'; ctx.strokeStyle = '#000000'; ctx.lineWidth = 4;
+      ctx.font = '900 16px Arial Black'; ctx.textAlign = 'center';
+      
+      // If it's a multiplier or action gate, parse text
+      let displayText = side.text;
+      if (side.type === 'SQUAD_ADD' && !side.isBad) displayText = `+${Math.round(side.val)} SQUAD`;
+      
+      ctx.strokeText(displayText, 0, 18); ctx.fillText(displayText, 0, 18);
       ctx.restore(); ctx.restore();
     }
 
     function drawSquad() {
       ctx.save(); ctx.translate(squad.x, trackProgress);
-      drawShadow(ctx, 0, 0, 40 + Math.min(squad.count, 20)); // Base shadow
-
       const count = Math.max(1, squad.count);
+      drawShadow(ctx, 0, 0, 40 + Math.min(count, 30));
+
       const rows = Math.ceil(Math.sqrt(count));
       const cols = Math.ceil(count / rows);
-      const tier = squad.tier;
+      const emoji = TIERS[squad.tier].emoji;
 
       let drawn = 0;
       for (let r = 0; r < rows; r++) {
         for (let c = 0; c < cols; c++) {
           if (drawn >= count) break;
-          const ox = (c - (cols - 1) / 2) * 22;
-          const oy = (r - (rows - 1) / 2) * 22;
-          const bob = Math.abs(Math.sin((trackProgress * 0.1) + drawn)) * 6; // Bouncing walk
+          // Grid formation
+          const ox = (c - (cols - 1) / 2) * 28;
+          const oy = (r - (rows - 1) / 2) * 28;
+          
+          // Walking Bob Animation
+          const bob = Math.abs(Math.sin((trackProgress * 0.1) + drawn)) * 8;
 
-          if (tier === 0) { // Chicken Jockey
-            drawVoxel(ctx, ox, oy, bob, 14, 14, 12, '#f8fafc');
-            drawVoxel(ctx, ox, oy, 14 + bob, 8, 8, 8, '#ef4444');
-          } else if (tier === 1) { // Bombadillo
-            drawVoxel(ctx, ox, oy, bob, 22, 12, 10, '#15803d');
-            drawVoxel(ctx, ox, oy, 6 + bob, 8, 20, 4, '#64748b');
-          } else if (tier === 2) { // Clanker
-            drawVoxel(ctx, ox, oy, bob, 14, 16, 16, '#94a3b8');
-            drawVoxel(ctx, ox, oy, 16 + bob, 10, 10, 10, '#cbd5e1');
-            drawVoxel(ctx, ox, oy + 4, 20 + bob, 4, 4, 2, '#ef4444');
-          } else if (tier === 3) { // Big Back
-            drawVoxel(ctx, ox, oy, bob, 26, 18, 20, '#d97706');
-            drawVoxel(ctx, ox, oy, 18 + bob, 14, 14, 12, '#ef4444');
-          } else { // Gorilla
-            drawVoxel(ctx, ox, oy, bob, 28, 22, 22, '#1e293b');
-            drawVoxel(ctx, ox, oy, 22 + bob, 18, 16, 16, '#facc15');
-          }
+          ctx.save();
+          ctx.translate(ox, oy + bob);
+          ctx.scale(1, -1);
+          ctx.font = '32px Arial';
+          ctx.fillText(emoji, 0, 0);
+          ctx.restore();
+
           drawn++;
         }
       }
 
+      // Squad Count Bubble
       ctx.save(); ctx.scale(1, -1);
-      ctx.fillStyle = '#0f172a'; ctx.fillRect(-24, 30, 48, 22);
-      ctx.strokeStyle = TIERS[tier].bulletColor; ctx.lineWidth = 2; ctx.strokeRect(-24, 30, 48, 22);
+      ctx.fillStyle = '#0f172a'; ctx.beginPath(); ctx.roundRect(-30, 35, 60, 24, 12); ctx.fill();
+      ctx.strokeStyle = TIERS[squad.tier].color; ctx.lineWidth = 2; ctx.stroke();
       ctx.fillStyle = '#fff'; ctx.font = '900 14px Arial Black'; ctx.textAlign = 'center';
-      ctx.fillText(Math.round(squad.count), 0, 46);
+      ctx.fillText(`x${Math.round(squad.count)}`, 0, 52);
       ctx.restore();
 
       ctx.restore();
@@ -627,7 +670,7 @@
       state = 'GAMEOVER';
       document.getElementById('endTitle').innerText = 'CRASHED OUT!';
       document.getElementById('endTitle').style.color = '#ef4444';
-      document.getElementById('endDesc').innerText = 'You lost all your squad and aura!';
+      document.getElementById('endDesc').innerText = 'Your squad was wiped out!';
       document.getElementById('nextBtn').innerText = "RETRY";
       document.getElementById('endModal').style.display = 'flex';
     }
@@ -637,7 +680,6 @@
       initLevel();
     }
 
-    // Don't auto-start loop until tap (to satisfy AudioContext rules)
     requestAnimationFrame(loop);
   </script>
 </body>
