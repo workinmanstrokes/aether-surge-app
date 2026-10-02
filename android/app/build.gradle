@@ -7,10 +7,10 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    namespace = "com.aethersurge.game"
+    namespace = "com.brainrot.aurarush"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "com.aethersurge.game"
+        applicationId "com.brainrot.aurarush"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

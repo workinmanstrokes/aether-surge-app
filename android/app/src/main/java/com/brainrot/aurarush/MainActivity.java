@@ -1,4 +1,4 @@
-package com.aethersurge.game;
+package com.brainrot.aurarush;
 
 import com.getcapacitor.BridgeActivity;
 
