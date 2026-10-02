@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Aether Surge: Survivor RPG</string>
-    <string name="title_activity_main">Aether Surge: Survivor RPG</string>
-    <string name="package_name">com.aethersurge.game</string>
-    <string name="custom_url_scheme">com.aethersurge.game</string>
+    <string name="app_name">Brainrot: Aura Rush</string>
+    <string name="title_activity_main">Brainrot: Tactical Aura Rush</string>
+    <string name="package_name">com.brainrot.aurarush</string>
+    <string name="custom_url_scheme">com.brainrot.aurarush</string>
 </resources>

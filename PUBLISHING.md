@@ -1,68 +1,75 @@
-# Publishing Aether Surge to Google Play
+# Publishing Brainrot: Tactical Aura Rush to Google Play
 
-## What's already done
-- Native Android project (Capacitor) builds successfully — debug and signed release AAB both verified.
-- Polish: pause (button + Android back button + auto-pause on backgrounding), haptics on hit/level-up/ascend/death, status bar theming, native splash screen, portrait lock, persisted best-score.
-- Monetization: AdMob wired for a bottom banner (start/end screens only, hidden during gameplay), an interstitial every other retry/continue, and a rewarded "watch ad to revive" on death — **currently using Google's official test ad unit IDs**, safe to build and test with, but they show only test ads and earn no revenue.
-- App icon (adaptive + legacy, all densities) and splash screen generated from `assets/icon*.svg` / `assets/splash.svg`.
-- Feature graphic for the store listing: `assets/store/feature-graphic.png` (1024x500).
-- Privacy policy draft: `privacy-policy.html` — **has placeholders you must fill in** (your name/contact, effective date, children's-audience statement) before hosting it.
-- Signed release keystore: `keystore/aether-surge-upload.jks`, wired into `android/app/build.gradle` via `android/keystore.properties`.
+> This project was split out of the original "Aether Surge" app (which now lives in its own repo,
+> `workinmanstrokes/aether-surge`). Brainrot has its own app ID and must be published as a **separate**
+> Play Console app — never upload it to the Aether Surge listing.
+
+## Identity
+- App ID / package: `com.brainrot.aurarush` (`capacitor.config.json`, `android/app/build.gradle` `applicationId` + `namespace`)
+- App name: `Brainrot: Tactical Aura Rush` (`capacitor.config.json`); launcher label `Brainrot: Aura Rush`
+  (`android/app/src/main/res/values/strings.xml` → `app_name`; shortened so it fits under the home-screen icon)
+- Main activity: `android/app/src/main/java/com/brainrot/aurarush/MainActivity.java`
+
+## Current state
+- Native Android project (Capacitor 8). GitHub Actions (`.github/workflows/build-apk.yml`) builds a **debug APK** on
+  push to `master`/`main` and on manual `workflow_dispatch`; the artifact is `BrainrotAuraRush-debug`.
+- The game (`www/index.html`) is a self-contained canvas game. It currently does **not** call any Capacitor plugins:
+  no ads, no haptics, no pause/back-button handling, no saved best score, no status-bar/splash handling.
+- `package.json` still depends on `@capacitor-community/admob`, `@capacitor/haptics`, `@capacitor/app`,
+  `@capacitor/status-bar` and `@capacitor/splash-screen` (inherited from Aether Surge). Either wire them into the game
+  or remove the unused ones before release — the AdMob SDK in particular affects the Data safety form.
+- `AndroidManifest.xml` still contains **Google's test AdMob App ID** (`ca-app-pub-3940256099942544~3347511713`).
 
 ## Before you publish — required steps
 
-### Signing fingerprint (SHA-256)
-`27:7F:5A:1A:D2:1E:E7:87:F8:47:0C:79:2B:81:C1:DE:BF:F7:1A:53:79:26:DC:D2:CB:F6:45:50:B1:4F:DF:88`
-Keep this handy — some services (Firebase, other SDKs) ask for it when you register the app.
+### 1. Store art (needed — none exists yet)
+The Aether Surge store art (feature graphic, screenshots) was removed from this repo. Brainrot needs its own:
+- Feature graphic 1024x500 → put it in `assets/store/`.
+- App icon + splash: `assets/icon*.svg` / `assets/splash.svg` and the generated `android/app/src/main/res/mipmap-*`
+  / `drawable*` images are **still the Aether Surge star** (kept only so the build works). Replace the sources, then
+  regenerate with `npx capacitor-assets generate --android` (Node 22).
+- At least 2 phone screenshots (portrait, e.g. 1080x1920/1080x2400) of Brainrot gameplay.
 
-### 1. Back up the keystore. This is the single most important step.
-`keystore/aether-surge-upload.jks` plus the credentials in `keystore/CREDENTIALS_DO_NOT_COMMIT.txt` are what let you
-ever publish an update to this app again. **If you lose them, you cannot update the app under this listing — Google
-cannot recover or reset it.** Copy both files somewhere safe and durable (a password manager, an encrypted backup) —
-not just this machine. Neither file is committed to git (see `.gitignore`), so don't lose your only copy.
-
-### 2. Swap in real AdMob IDs
-1. Create an AdMob account at https://admob.google.com (separate from your Play Console account, same Google login is fine).
-2. Create an app in AdMob, get your real **App ID** (format `ca-app-pub-XXXXXXXXXXXXXXXX~YYYYYYYYYY`).
-3. Create three ad units: Banner, Interstitial, Rewarded — get their ad unit IDs (format `ca-app-pub-XXXXXXXXXXXXXXXX/ZZZZZZZZZZ`).
-4. Replace:
-   - `android/app/src/main/AndroidManifest.xml` — the `com.google.android.gms.ads.APPLICATION_ID` meta-data value (search for the `TODO` comment above it).
-   - `www/index.html` — the `AD.bannerId`, `AD.interId`, `AD.rewardId` values near the top of the script, and remove `isTesting:true` from the three `AdMob.prepare*`/`showBanner` calls once you're ready for real traffic (leave `isTesting:true` while you're still testing so you never risk serving/clicking real ads yourself, which AdMob can penalize).
-   - Copy `www/index.html` to `android/app/src/main/assets/public/index.html` (or run `npx cap sync android`) and rebuild.
-
-### 3. Finish and host the privacy policy
-Fill in the placeholders in `privacy-policy.html` (your name/contact email, effective date, and whether the app targets
-children). Host it somewhere public (GitHub Pages is free and simple) and use that URL in Play Console's Store Listing
-and Data Safety sections. **Required** because the app uses ads (AdMob collects advertising ID / device data).
-
-### 4. Build the real release
+### 2. Signing key
+Create a **new upload keystore for this app** (don't reuse the Aether Surge key), e.g.:
 ```
+keytool -genkeypair -v -keystore keystore/brainrot-upload.jks -alias brainrot -keyalg RSA -keysize 2048 -validity 10000
+```
+Then create `android/keystore.properties` (git-ignored) with `storeFile`, `storePassword`, `keyAlias`, `keyPassword`
+— `android/app/build.gradle` picks it up automatically. **Back the keystore and passwords up somewhere safe**; if you
+lose them you cannot update the app. Keystores and `keystore.properties` are git-ignored — keep it that way.
+
+### 3. Ads (only if you decide to monetize with AdMob)
+1. Create the app in AdMob, get the real App ID (`ca-app-pub-XXXXXXXXXXXXXXXX~YYYYYYYYYY`) and ad unit IDs.
+2. Replace the test App ID in `android/app/src/main/AndroidManifest.xml` (`com.google.android.gms.ads.APPLICATION_ID`).
+3. Add the AdMob calls to `www/index.html` (keep `isTesting:true` while testing).
+If you don't want ads, remove `@capacitor-community/admob` from `package.json` and the AdMob `<meta-data>` from the
+manifest, and update the privacy policy's Advertising section accordingly.
+
+### 4. Finish and host the privacy policy
+`privacy-policy.html` still has TODOs: developer name, contact email, children's-audience statement, and whether the
+Advertising section applies. Host it publicly (e.g. GitHub Pages) and use the URL in Play Console.
+
+### 5. Build the release
+```
+npx cap sync android
 cd android
 ./gradlew bundleRelease
 ```
-Output: `android/app/build/outputs/bundle/release/app-release.aab` — this is the file you upload to Play Console.
-(Already built once during setup to confirm signing works — rebuild after step 2's ID swap.)
+Output: `android/app/build/outputs/bundle/release/app-release.aab`.
 
-### 5. Google Play Console checklist
-You said you already have a developer account, so:
-1. Create a new app (Aether Surge: Survivor RPG, package `com.aethersurge.game`).
-2. **Store listing**: short/long description, screenshots (see below), `assets/store/feature-graphic.png`, app icon (`assets/icon.png`, 512x512 — resize if Play wants exactly 512, current is 1024, downscale it).
-3. **Content rating** questionnaire — answer based on violence level (cartoon/fantasy violence, no blood) and ads.
-4. **Target audience and content** — pick the actual audience; if not children, say so explicitly (affects ad settings).
-5. **Data safety** form — declare AdMob's data collection (advertising ID, device identifiers) as described in the privacy policy. AdMob's own Play Console help page has the exact checklist AdMob requires.
-6. **Privacy policy URL** — paste your hosted URL from step 3.
-7. **App content** — ads declaration: yes, contains ads.
-8. Upload `app-release.aab` under Production (or start with Internal Testing to try it on a real device first — recommended for a first release).
-9. Submit for review.
+### 6. Google Play Console checklist
+1. Create a **new** app: Brainrot: Tactical Aura Rush, package `com.brainrot.aurarush`.
+2. Store listing: descriptions, screenshots, feature graphic, 512x512 icon.
+3. Content rating questionnaire.
+4. Target audience and content — must match the privacy policy's children's statement.
+5. Data safety form — declare what the final build collects (none by the game itself; AdMob data if ads are used).
+6. Privacy policy URL.
+7. Ads declaration (yes/no, depending on step 3).
+8. Upload `app-release.aab` (start with Internal testing), then submit for review.
 
-### Screenshots
-Not yet generated. Easiest path: run the app on the emulator (`emulator -avd Pixel_8`, install the debug APK,
-`adb shell screencap`) or on a real device, and capture the start screen, mid-gameplay, and a level-up screen —
-Play Store needs at least 2 phone screenshots (1080x1920 or similar portrait aspect works well).
-
-## Reference: project layout
-- `www/index.html` — the game itself (source of truth; edit here, then sync to `android/app/src/main/assets/public/`)
+## Project layout
+- `www/index.html` — the game (source of truth; `npx cap sync android` copies it into the Android project)
 - `android/` — native Capacitor Android project
-- `assets/` — icon/splash SVG sources and generated PNGs, `assets/store/` — store listing graphics
-- `keystore/` — signing key (back this up!)
-- `capacitor.config.json` — app ID / name / web dir config
+- `assets/` — icon/splash sources (still Aether Surge art — replace), `assets/store/` — store graphics (to be added)
+- `capacitor.config.json` — app ID / name / web dir
