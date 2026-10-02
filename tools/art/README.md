@@ -40,12 +40,9 @@ to render a few samples without touching the repo.
 `capture-screenshots.mjs` opens the game at 432x768 CSS px with `deviceScaleFactor: 2.5`, which gives
 exactly 1080x1920 device pixels. Nothing is resized afterwards. `Math.random` is seeded, so a run is
 mostly repeatable. The game runs in real time, so frame timing can still vary a little. An autopilot steers with real mouse-drag events, and the script takes a shot when a named
-moment happens (gate choice, swarm, wide formation, spearhead, Gorilla King telegraph, Last Stand,
-crash-out). Each run restarts after the boss, because the current game freezes there (see the PR notes).
+moment happens (gate choice, swarm, wide formation, spearhead,
+Gorilla King laser strike, Stage Clear upgrade screen, Last Stand).
 Use `--only name1,name2` to re-shoot specific moments.
 
-The game sizes its canvas in CSS pixels, so on a 2.5x screen the browser would stretch a 432x768 bitmap.
-To keep the shots crisp, the harness backs `#gameCanvas` with a devicePixelRatio-sized bitmap and
-pre-scales the context. That's the only change, and it applies to the capture only. Game code, logic
-and draw calls stay the same. Shipping the same DPR fix in the game would make it look this sharp on
-phones too.
+The game draws its canvas at the device pixel ratio, so the shots are captured exactly as the game
+renders them, with no capture-only tweaks.

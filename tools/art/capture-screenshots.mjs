@@ -4,9 +4,7 @@
 // How: serves www/ locally, opens it in headless Chrome at 432x768 CSS px with deviceScaleFactor 2.5
 // (= 1080x1920 device px, no image upscaling), seeds Math.random so a run is repeatable, and lets a
 // simple autopilot steer the squad with real mouse-drag events. Shots are taken when a moment happens.
-// Capture-only tweak: the game sizes its canvas in CSS px, so on a 2.5x screen the browser would
-// stretch a 432x768 bitmap. For crisp shots the harness backs #gameCanvas with a devicePixelRatio-sized
-// bitmap and pre-scales the context. The game's own code, logic and drawing calls are not modified.
+// The game renders its canvas at devicePixelRatio itself, so no capture tweaks are needed.
 import { chromium } from 'playwright-core';
 import http from 'node:http';
 import fs from 'node:fs';
@@ -38,19 +36,6 @@ const ctx = await browser.newContext({ viewport: { width: 432, height: 768 }, de
 await ctx.addInitScript(s => {
   let a = s >>> 0; // mulberry32
   Math.random = () => { a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
-  const dpr = window.devicePixelRatio || 1;
-  for (const dim of ['width', 'height']) {
-    const d = Object.getOwnPropertyDescriptor(HTMLCanvasElement.prototype, dim);
-    Object.defineProperty(HTMLCanvasElement.prototype, dim, {
-      configurable: true,
-      get() { return this.id === 'gameCanvas' && this['_l' + dim] != null ? this['_l' + dim] : d.get.call(this); },
-      set(v) {
-        if (this.id !== 'gameCanvas') return d.set.call(this, v);
-        this['_l' + dim] = v; d.set.call(this, Math.round(v * dpr));
-        this.getContext('2d').setTransform(dpr, 0, 0, dpr, 0, 0);
-      },
-    });
-  }
 }, runSeed);
 const page = await ctx.newPage();
 const errors = []; page.on('pageerror', e => errors.push(String(e)));
@@ -71,14 +56,14 @@ await page.evaluate(() => {
   const steer = tx => {
     tx = Math.max(-150, Math.min(150, tx));
     dispatchEvent(new MouseEvent('mousedown', { clientX: cx, clientY: 600 }));
-    dispatchEvent(new MouseEvent('mousemove', { clientX: cx + (tx - squad.targetX) / 1.6, clientY: 600 }));
+    dispatchEvent(new MouseEvent('mousemove', { clientX: cx + (tx - squad.targetX) * (typeof VS !== 'undefined' ? VS : 1) / 1.6, clientY: 600 }));
     dispatchEvent(new MouseEvent('mouseup', {}));
   };
   window.__pilot = setInterval(() => {
     if (state !== 'PLAYING' && state !== 'BOSS') return;
     let tx = squad.targetX;
     if (state === 'BOSS' && boss) {
-      if (boss.state === 'TELEGRAPH' || boss.state === 'STRIKE') tx = boss.targetX > 0 ? boss.targetX - 140 : boss.targetX + 140;
+      if (boss.state === 'TELEGRAPH' || boss.state === 'STRIKE') { const lanes = boss.lanes && boss.lanes.length ? boss.lanes : [boss.targetX]; let best = null, bd = -1; for (let x = -150; x <= 150; x += 10) { const d = Math.min(...lanes.map(l => Math.abs(l - x))); if (d >= 80 && (best === null || Math.abs(x - squad.x) < Math.abs(best - squad.x))) best = x; if (d > bd) bd = d; } tx = best !== null ? best : (boss.targetX > 0 ? -150 : 150); }
       else tx = boss.x;
     } else {
       const g = entities.gates.find(g => g.active && g.y > trackProgress && g.y - trackProgress < 500);
@@ -94,30 +79,31 @@ await page.evaluate(() => {
 
 const t0 = Date.now();
 while (Date.now() - t0 < maxSec * 1000 && taken.size < want) {
-  if (errors.some(e => e.includes('triggerShake'))) break; // game froze at the boss (known bug)
+  if (errors.length) { console.log('page error:', errors[0]); break; }
   const s = await page.evaluate(() => {
     const g = entities.gates.find(g => g.active && g.y > trackProgress);
     return {
       state, count: squad.count, form: squad.formation, slow: slowMoTimer, texts: entities.texts.length,
       gateAhead: g ? g.y - trackProgress : null, gateFresh: g ? !g.left.hitTime && !g.right.hitTime : false,
-      gateBad: g ? !!g.right.isBad : false,
+      gateBad: g ? !!(g.left.isBad || g.right.isBad) : false,
       enemiesNear: entities.enemies.filter(e => e.active && e.y - trackProgress > 120 && e.y - trackProgress < 420).length,
       boss: boss ? { st: boss.state, t: boss.timer } : null,
     };
   });
-  if (s.state === 'GAMEOVER') {
-    if (!taken.has('08-crashed-out') && taken.size >= 4) { await page.waitForTimeout(600); await snap('08-crashed-out'); }
-    await page.click('#nextBtn');
-    continue;
+  if (s.state === 'GAMEOVER') { await page.waitForTimeout(400); await page.click('#nextBtn'); continue; }
+  if (s.state === 'VICTORY') {
+    await page.waitForTimeout(700); await snap('07-stage-clear');
+    for (let i = 0; i < 3; i++) { const b = await page.$('#shop .upg:not([disabled])'); if (!b) break; await b.click(); await page.waitForTimeout(80); }
+    await page.click('#nextBtn'); continue;
   }
   if (s.state === 'PLAYING') {
-    if (s.gateAhead > 240 && s.gateAhead < 330 && s.count >= 10 && s.texts === 0) await snap('02-choose-a-gate');
+    if (s.gateAhead > 240 && s.gateAhead < 330 && s.count >= 10 && s.texts === 0 && s.gateBad) await snap('02-choose-a-gate');
     else if (s.enemiesNear >= 2 && s.texts >= 1 && s.count >= 8) await snap('03-blast-the-swarm');
     else if (s.form === 'WIDE' && s.count >= 25 && s.texts === 0) await snap('04-wide-formation');
     else if (s.form === 'SPEARHEAD' && s.count >= 20) await snap('05-spearhead');
-    else if (s.slow > 1.2) await snap('07-last-stand');
+    else if (s.slow > 1.2) await snap('08-last-stand');
   }
-  if (s.state === 'BOSS' && s.boss && s.boss.st === 'TELEGRAPH' && s.boss.t < 1.5 && s.boss.t > 1.3) await snap('06-gorilla-king');
+  if (s.state === 'BOSS' && s.boss && s.boss.st === 'STRIKE' && s.boss.t < 0.65) await snap('06-gorilla-king-laser');
   await page.waitForTimeout(40);
 }
 await ctx.close();
