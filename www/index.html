@@ -4,73 +4,97 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Brainrot: Tactical Aura Rush</title>
+  <link rel="icon" href="data:,">
   <style>
+    @font-face { font-family: 'GameFont'; src: url('fonts/ArchivoBlack-Regular.ttf') format('truetype'); font-display: swap; }
     * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; touch-action: none; }
-    body, html { width: 100%; height: 100%; overflow: hidden; background: #0f172a; font-family: 'Arial Black', Impact, sans-serif; transition: background 2s ease; }
+    body, html { width: 100%; height: 100%; overflow: hidden; background: #0f172a; font-family: 'GameFont', 'Arial Black', Impact, 'Roboto', 'Helvetica Neue', Arial, sans-serif; }
     canvas#gameCanvas { display: block; width: 100vw; height: 100vh; }
-    
+
     #ui { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: none; }
-    
-    .top-bar { position: absolute; top: env(safe-area-inset-top, 16px); left: 16px; right: 16px; display: flex; flex-direction: column; gap: 12px; }
-    .stats-row { display: flex; justify-content: space-between; align-items: center; color: #fff; font-size: 15px; text-shadow: 0 2px 6px rgba(0,0,0,0.9); }
-    .badge { background: rgba(15, 23, 42, 0.92); padding: 8px 16px; border-radius: 20px; border: 2px solid #38bdf8; box-shadow: 0 4px 14px rgba(56, 189, 248, 0.4); display: flex; align-items: center; gap: 6px; }
-    
-    .progress-container { width: 100%; height: 14px; background: rgba(15,23,42,0.9); border: 2px solid #334155; border-radius: 8px; overflow: hidden; position: relative; }
+
+    .top-bar { position: absolute; top: max(env(safe-area-inset-top, 0px), 14px); left: 12px; right: 12px; display: flex; flex-direction: column; gap: 10px; }
+    .stats-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; color: #fff; font-size: 14px; text-shadow: 0 2px 6px rgba(0,0,0,0.9); }
+    .right-group { display: flex; align-items: center; gap: 8px; }
+    .badge { background: rgba(15, 23, 42, 0.92); padding: 7px 14px; border-radius: 20px; border: 2px solid #38bdf8; box-shadow: 0 4px 14px rgba(56, 189, 248, 0.4); display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+    .icon-btn { pointer-events: auto; width: 38px; height: 38px; border-radius: 50%; border: 2px solid #94a3b8; background: rgba(15,23,42,0.92); color: #fff; font-size: 16px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-family: sans-serif; }
+    .icon-btn:active { transform: scale(0.92); }
+
+    .progress-container { width: 100%; height: 12px; background: rgba(15,23,42,0.9); border: 2px solid #334155; border-radius: 8px; overflow: hidden; position: relative; }
     .progress-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #38bdf8, #facc15, #ec4899); box-shadow: 0 0 10px #facc15; transition: width 0.1s linear; }
-    
-    .tier-announcement { position: absolute; top: 90px; left: 50%; transform: translateX(-50%); color: #38bdf8; font-size: 18px; text-shadow: 0 3px 0 #0369a1, 0 0 14px rgba(56, 189, 248, 0.7); text-transform: uppercase; letter-spacing: 1px; white-space: nowrap; transition: transform 0.2s; }
+
+    .tier-announcement { position: absolute; top: calc(max(env(safe-area-inset-top, 0px), 14px) + 78px); left: 50%; transform: translateX(-50%); color: #38bdf8; font-size: 16px; text-shadow: 0 3px 0 #0369a1, 0 0 14px rgba(56, 189, 248, 0.7); text-transform: uppercase; letter-spacing: 1px; white-space: nowrap; transition: transform 0.2s; }
     .tier-pop { transform: translateX(-50%) scale(1.3) !important; color: #fff !important; text-shadow: 0 0 20px #facc15 !important; }
 
-    .modal { position: absolute; inset: 0; background: rgba(2, 6, 23, 0.95); backdrop-filter: blur(8px); display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: auto; z-index: 100; }
-    .card { background: linear-gradient(180deg, #1e1b4b 0%, #0f172a 100%); border: 4px solid #38bdf8; border-radius: 24px; padding: 30px 24px; text-align: center; width: 85%; max-width: 340px; box-shadow: 0 16px 50px rgba(56, 189, 248, 0.3); animation: slideUp 0.4s ease-out; }
+    .modal { position: absolute; inset: 0; background: rgba(2, 6, 23, 0.9); backdrop-filter: blur(6px); display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: auto; z-index: 100; }
+    .card { background: linear-gradient(180deg, #1e1b4b 0%, #0f172a 100%); border: 4px solid #38bdf8; border-radius: 24px; padding: 24px 20px; text-align: center; width: 88%; max-width: 360px; box-shadow: 0 16px 50px rgba(56, 189, 248, 0.3); animation: slideUp 0.4s ease-out; }
     @keyframes slideUp { from { transform: translateY(40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-    
-    .card h1 { font-size: 30px; color: #38bdf8; margin-bottom: 12px; text-transform: uppercase; text-shadow: 0 4px 0 #0369a1; }
-    .card p { font-size: 16px; color: #cbd5e1; margin-bottom: 24px; font-family: sans-serif; font-weight: bold; line-height: 1.4; }
-    
-    .btn { background: linear-gradient(180deg, #38bdf8 0%, #0284c7 100%); border: 2px solid #bae6fd; color: #0f172a; font-family: 'Arial Black', sans-serif; font-size: 20px; padding: 16px 32px; border-radius: 16px; cursor: pointer; box-shadow: 0 8px 20px rgba(56, 189, 248, 0.5); text-transform: uppercase; letter-spacing: 1px; width: 100%; transition: transform 0.1s; }
+    .card h1 { font-size: 28px; color: #38bdf8; margin-bottom: 10px; text-transform: uppercase; text-shadow: 0 4px 0 #0369a1; font-weight: normal; }
+    .card p { font-size: 15px; color: #cbd5e1; margin-bottom: 18px; font-family: 'Roboto', 'Helvetica Neue', Arial, sans-serif; font-weight: bold; line-height: 1.4; }
+    .card p.best { font-size: 13px; color: #facc15; margin: -8px 0 16px; }
+
+    .btn { background: linear-gradient(180deg, #38bdf8 0%, #0284c7 100%); border: 2px solid #bae6fd; color: #0f172a; font-family: inherit; font-size: 19px; padding: 14px 28px; border-radius: 16px; cursor: pointer; box-shadow: 0 8px 20px rgba(56, 189, 248, 0.5); text-transform: uppercase; letter-spacing: 1px; width: 100%; transition: transform 0.1s; }
     .btn:active { transform: scale(0.95); }
-    
-    #hint { position: absolute; bottom: 15%; left: 50%; transform: translateX(-50%); color: #fff; font-size: 18px; letter-spacing: 2px; animation: pulse 1s infinite alternate; text-shadow: 0 2px 4px #000; }
-    
-    #bossUI { position: absolute; top: 130px; left: 50%; transform: translateX(-50%); width: 80%; display: none; flex-direction: column; align-items: center; gap: 8px; }
-    #bossUI span { color: #ef4444; font-size: 18px; text-shadow: 0 2px 4px #000; letter-spacing: 2px; }
-    .boss-hp-container { width: 100%; height: 16px; background: rgba(0,0,0,0.8); border: 2px solid #7f1d1d; border-radius: 8px; overflow: hidden; }
+    .btn.gold { background: linear-gradient(180deg, #facc15 0%, #ca8a04 100%); border-color: #fef08a; box-shadow: 0 8px 20px rgba(250, 204, 21, 0.4); }
+    .btn.ghost { background: transparent; color: #e2e8f0; border-color: #475569; box-shadow: none; font-size: 15px; padding: 10px; margin-top: 10px; }
+
+    #shop { display: none; flex-direction: column; gap: 8px; margin: -4px 0 16px; }
+    #shop h2 { font-size: 13px; color: #facc15; letter-spacing: 1px; font-weight: normal; }
+    .upg { display: flex; align-items: center; gap: 10px; text-align: left; background: rgba(15,23,42,0.85); border: 2px solid #334155; border-radius: 14px; padding: 8px 10px; color: #fff; font-family: inherit; cursor: pointer; width: 100%; }
+    .upg:not(:disabled):active { transform: scale(0.97); }
+    .upg:disabled { opacity: 0.45; cursor: default; }
+    .upg .ico { font-size: 20px; width: 26px; text-align: center; font-family: sans-serif; }
+    .upg .txt { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+    .upg .nm { font-size: 13px; }
+    .upg .ds { font-size: 11px; color: #94a3b8; font-family: 'Roboto', Arial, sans-serif; font-weight: bold; }
+    .upg .pips { font-size: 10px; color: #38bdf8; letter-spacing: 2px; font-family: sans-serif; }
+    .upg .cost { font-size: 13px; color: #facc15; white-space: nowrap; }
+
+    #hint { position: absolute; top: 58%; left: 50%; transform: translateX(-50%); color: #fff; font-size: 16px; letter-spacing: 2px; animation: pulse 1s infinite alternate; text-shadow: 0 2px 4px #000; white-space: nowrap; }
+    @keyframes pulse { from { opacity: 0.55; } to { opacity: 1; } }
+
+    #bossUI { position: absolute; top: calc(max(env(safe-area-inset-top, 0px), 14px) + 112px); left: 50%; transform: translateX(-50%); width: 80%; display: none; flex-direction: column; align-items: center; gap: 6px; }
+    #bossUI span { color: #ef4444; font-size: 16px; text-shadow: 0 2px 4px #000; letter-spacing: 2px; }
+    .boss-hp-container { width: 100%; height: 14px; background: rgba(0,0,0,0.8); border: 2px solid #7f1d1d; border-radius: 8px; overflow: hidden; }
     .boss-hp-fill { height: 100%; width: 100%; background: linear-gradient(90deg, #ef4444, #dc2626); transition: width 0.1s; }
-    
-    /* Post-Processing Screen Effects */
-    #damageOverlay { position: absolute; inset: 0; background: radial-gradient(circle, transparent 40%, rgba(239,68,68,0.4) 100%); opacity: 0; pointer-events: none; transition: opacity 0.2s; }
-    #slowmoOverlay { position: absolute; inset: 0; box-shadow: inset 0 0 100px rgba(56,189,248,0.3); opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+
+    #damageOverlay { position: absolute; inset: 0; background: radial-gradient(circle, transparent 40%, rgba(239,68,68,0.45) 100%); opacity: 0; pointer-events: none; }
+    #slowmoOverlay { position: absolute; inset: 0; box-shadow: inset 0 0 100px rgba(56,189,248,0.35); opacity: 0; pointer-events: none; transition: opacity 0.3s; }
   </style>
 </head>
 <body>
+  <canvas id="gameCanvas"></canvas>
   <div id="damageOverlay"></div>
   <div id="slowmoOverlay"></div>
-  <canvas id="gameCanvas"></canvas>
 
   <div id="ui">
     <div class="top-bar">
       <div class="progress-container"><div class="progress-fill" id="progressBar"></div></div>
       <div class="stats-row">
         <div class="badge" id="levelBadge">ZONE 1</div>
-        <div class="badge" style="border-color:#facc15;" id="auraBadge">✨ 0 AURA</div>
+        <div class="right-group">
+          <div class="badge" style="border-color:#facc15;" id="auraBadge">✨ 0 AURA</div>
+          <button class="icon-btn" id="muteBtn" aria-label="Mute" onclick="toggleMute()">🔊</button>
+          <button class="icon-btn" id="pauseBtn" aria-label="Pause" onclick="pauseGame()">❚❚</button>
+        </div>
       </div>
     </div>
-    
+
     <div id="bossUI">
       <span>GORILLA KING</span>
       <div class="boss-hp-container"><div class="boss-hp-fill" id="bossHpBar"></div></div>
     </div>
 
-    <div class="tier-announcement" id="tierBadge">FORMATION: WIDE SQUAD</div>
+    <div class="tier-announcement" id="tierBadge">FORMATION: GRID</div>
     <div id="hint">⟵ DRAG TO STEER ⟶</div>
   </div>
 
   <div id="startModal" class="modal">
     <div class="card">
-      <h1 style="color:#facc15; text-shadow:0 4px 0 #a16207; border-color:#facc15;">TACTICAL RUSH</h1>
-      <p>Choose Formations to adapt.<br>Dodge telegraphed Boss lasers.<br>Last Stand slow-mo will save you!</p>
-      <button class="btn" style="background: linear-gradient(180deg, #facc15 0%, #ca8a04 100%); border-color:#fef08a;" onclick="startGame()">TAP TO START</button>
+      <h1 style="color:#facc15; text-shadow:0 4px 0 #a16207;">TACTICAL RUSH</h1>
+      <p>Pick the right gates to grow your squad.<br>Dodge the Gorilla King's red laser.<br>Spend aura on upgrades between zones!</p>
+      <p class="best" id="startBest"></p>
+      <button class="btn gold" onclick="startGame()">TAP TO START</button>
     </div>
   </div>
 
@@ -78,42 +102,74 @@
     <div class="card">
       <h1 id="endTitle">STAGE CLEAR!</h1>
       <p id="endDesc">Boss Defeated!</p>
+      <p class="best" id="endBest"></p>
+      <div id="shop"></div>
       <button class="btn" id="nextBtn" onclick="nextLevel()">CONTINUE</button>
+    </div>
+  </div>
+
+  <div id="pauseModal" class="modal" style="display:none;">
+    <div class="card">
+      <h1>PAUSED</h1>
+      <p id="pauseDesc">Take a breather.</p>
+      <button class="btn gold" onclick="resumeGame()">RESUME</button>
+      <button class="btn ghost" id="pauseMuteBtn" onclick="toggleMute()">SOUND: ON</button>
     </div>
   </div>
 
   <script>
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d', { alpha: false });
+    const $ = id => document.getElementById(id);
+    const FONT = 'GameFont, "Arial Black", Impact, Roboto, Arial, sans-serif';
+    const font = px => `${px}px ${FONT}`;
 
+    // ----- Screen / scaling: canvas is backed at devicePixelRatio, world is scaled to fit the road -----
+    const ROAD_HALF = 190;                 // half road width in world units
+    let W = 0, H = 0, DPR = 1, VS = 1;     // CSS size, pixel ratio, world->CSS scale
     function resize() {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
+      DPR = Math.min(window.devicePixelRatio || 1, 3);
+      W = window.innerWidth; H = window.innerHeight;
+      canvas.width = Math.round(W * DPR); canvas.height = Math.round(H * DPR);
+      VS = Math.max(0.6, Math.min(W / 420, H / 760));
     }
     window.addEventListener('resize', resize);
     resize();
 
-    // Audio Engine
+    // ----- Persistence -----
+    const SAVE_KEY = 'brainrot-aura-rush-v1';
+    let save = { bestAura: 0, bestZone: 0, muted: false };
+    try { save = Object.assign(save, JSON.parse(localStorage.getItem(SAVE_KEY) || '{}')); } catch (e) { /* storage unavailable */ }
+    function persist() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) { /* ignore */ } }
+    function recordBest() {
+      save.bestAura = Math.max(save.bestAura, Math.round(aura));
+      save.bestZone = Math.max(save.bestZone, level);
+      persist();
+    }
+    const bestText = () => save.bestZone ? `BEST: ZONE ${save.bestZone} · ✨ ${save.bestAura}` : '';
+
+    // ----- Audio -----
     const AudioContext = window.AudioContext || window.webkitAudioContext;
-    let actx;
+    let actx, master, lastShootSound = 0;
     function initAudio() {
-      if (!actx) actx = new AudioContext();
+      if (!AudioContext) return;
+      if (!actx) { actx = new AudioContext(); master = actx.createGain(); master.connect(actx.destination); }
+      master.gain.value = save.muted ? 0 : 1;
       if (actx.state === 'suspended') actx.resume();
     }
     function playSound(type) {
-      if (!actx) return;
-      const osc = actx.createOscillator();
-      const gain = actx.createGain();
-      osc.connect(gain); gain.connect(actx.destination);
+      if (!actx || save.muted) return;
       const now = actx.currentTime;
-
+      if (type === 'shoot') { if (now - lastShootSound < 0.16) return; lastShootSound = now; }
+      const osc = actx.createOscillator(), gain = actx.createGain();
+      osc.connect(gain); gain.connect(master);
       if (type === 'shoot') {
         osc.type = 'square'; osc.frequency.setValueAtTime(600, now); osc.frequency.exponentialRampToValueAtTime(300, now + 0.05);
-        gain.gain.setValueAtTime(0.02, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
+        gain.gain.setValueAtTime(0.012, now); gain.gain.exponentialRampToValueAtTime(0.004, now + 0.05);
         osc.start(now); osc.stop(now + 0.05);
       } else if (type === 'hit') {
         osc.type = 'sawtooth'; osc.frequency.setValueAtTime(200, now); osc.frequency.exponentialRampToValueAtTime(50, now + 0.1);
-        gain.gain.setValueAtTime(0.1, now); gain.gain.linearRampToValueAtTime(0, now + 0.1);
+        gain.gain.setValueAtTime(0.08, now); gain.gain.linearRampToValueAtTime(0, now + 0.1);
         osc.start(now); osc.stop(now + 0.1);
       } else if (type === 'powerup') {
         osc.type = 'sine'; osc.frequency.setValueAtTime(800, now); osc.frequency.setValueAtTime(1200, now + 0.2);
@@ -121,304 +177,380 @@
         osc.start(now); osc.stop(now + 0.4);
       } else if (type === 'laser') {
         osc.type = 'sawtooth'; osc.frequency.setValueAtTime(100, now); osc.frequency.linearRampToValueAtTime(50, now + 0.8);
-        gain.gain.setValueAtTime(0.3, now); gain.gain.linearRampToValueAtTime(0, now + 0.8);
+        gain.gain.setValueAtTime(0.25, now); gain.gain.linearRampToValueAtTime(0, now + 0.8);
         osc.start(now); osc.stop(now + 0.8);
       } else if (type === 'damage') {
         osc.type = 'square'; osc.frequency.setValueAtTime(120, now); osc.frequency.exponentialRampToValueAtTime(20, now + 0.3);
-        gain.gain.setValueAtTime(0.2, now); gain.gain.linearRampToValueAtTime(0, now + 0.3);
+        gain.gain.setValueAtTime(0.18, now); gain.gain.linearRampToValueAtTime(0, now + 0.3);
         osc.start(now); osc.stop(now + 0.3);
       }
     }
+    function toggleMute() {
+      save.muted = !save.muted; persist();
+      if (master) master.gain.value = save.muted ? 0 : 1;
+      updateMuteUI();
+    }
+    function updateMuteUI() {
+      $('muteBtn').textContent = save.muted ? '🔇' : '🔊';
+      $('pauseMuteBtn').textContent = save.muted ? 'SOUND: OFF' : 'SOUND: ON';
+    }
 
-    // Game State
-    let state = 'START';
+    // ----- Game state -----
+    let state = 'START', pausedFrom = null;
     let level = 1, aura = 0, trackProgress = 0, trackLength = 6000, baseSpeed = 240, screenShake = 0;
-    let timeScale = 1.0; 
-    let slowMoTimer = 0;
-    let zoneColor = '#0f172a'; // Starts Blue-ish
+    let timeScale = 1.0, slowMoTimer = 0, zoneTime = 0, lastStandUsed = false, damageFlash = 0;
+    let shieldCharges = 0, carrySquad = 0, zoneAuraStart = 0;
+    const ZONE_COLORS = { train: [19, 33, 66], industrial: [74, 29, 10], arena: [59, 7, 100] };
+    let bgColor = ZONE_COLORS.train.slice();
 
-    const squad = { 
-      x: 0, targetX: 0, 
-      count: 4, visualCount: 4, // For streaming growth animation
-      formation: 'GRID', // GRID, WIDE, SPEARHEAD, SHIELD
-      fireRate: 4.5, fireRange: 550, shootTimer: 0 
+    const UPGRADES = {
+      recruits: { name: 'RECRUITS', ico: '🪖', desc: '+4 starting troopers', max: 5, base: 1500 },
+      rate:     { name: 'TRIGGER FINGER', ico: '⚡', desc: '+15% fire rate', max: 5, base: 2000 },
+      dmg:      { name: 'AURA ROUNDS', ico: '💥', desc: '+20% bullet damage', max: 5, base: 2000 },
+      shield:   { name: 'AURA SHIELD', ico: '🛡️', desc: 'Blocks 1 hit each zone', max: 3, base: 3000 },
     };
+    let upgrades = { recruits: 0, rate: 0, dmg: 0, shield: 0 };
+    const upgradeCost = k => Math.round(UPGRADES[k].base * Math.pow(1.6, upgrades[k]) / 50) * 50;
 
+    const squad = { x: 0, targetX: 0, drawX: 0, count: 8, visualCount: 8, formation: 'GRID', fireRate: 4.5, fireRange: 550, shootTimer: 0 };
     const entities = { bullets: [], gates: [], enemies: [], particles: [], texts: [] };
     let boss = null;
 
-    let dragging = false, dragStartX = 0, squadStartX = 0;
+    // Difficulty knobs per zone
+    // Hits cost a flat amount early on and a share of the squad later, so big squads still feel pressure.
+    const tankDamage = () => Math.max(Math.min(24, 2 + level * 2), Math.round(squad.count * (0.08 + 0.015 * level)));
+    const swarmDamage = () => Math.max(2 + Math.floor((level - 1) / 2), Math.round(squad.count * (0.03 + 0.008 * level)));
+    const enemyHpMul = () => Math.pow(1.22, level - 1);
+    const bossHp = () => Math.round(2400 * Math.pow(1.5, level - 1));
+    const bulletDamage = () => (10 + level * 2) * (1 + 0.2 * upgrades.dmg);
 
+    // ----- Input -----
+    let dragging = false, dragStartX = 0, squadStartX = 0;
+    function hideHint() { $('hint').style.display = 'none'; }
     function onPointerDown(e) {
       if (state !== 'PLAYING' && state !== 'BOSS') return;
+      if (e.target && e.target.closest && e.target.closest('button')) return;
       dragging = true; dragStartX = e.touches ? e.touches[0].clientX : e.clientX;
-      squadStartX = squad.targetX; document.getElementById('hint').style.display = 'none';
+      squadStartX = squad.targetX;
     }
     function onPointerMove(e) {
       if (!dragging) return;
       const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-      const dx = (clientX - dragStartX) * 1.6;
+      const dx = (clientX - dragStartX) * 1.6 / VS;
+      if (Math.abs(dx) > 4) hideHint();
       squad.targetX = Math.max(-150, Math.min(150, squadStartX + dx));
     }
     function onPointerUp() { dragging = false; }
     window.addEventListener('mousedown', onPointerDown); window.addEventListener('mousemove', onPointerMove); window.addEventListener('mouseup', onPointerUp);
     window.addEventListener('touchstart', onPointerDown, { passive: true }); window.addEventListener('touchmove', onPointerMove, { passive: true }); window.addEventListener('touchend', onPointerUp);
+    window.addEventListener('keydown', e => { if (e.key === 'Escape' || e.key === 'p') { state === 'PAUSED' ? resumeGame() : pauseGame(); } });
+    document.addEventListener('visibilitychange', () => { if (document.hidden) { pauseGame(); recordBest(); } });
 
-    function startGame() { initAudio(); document.getElementById('startModal').style.display = 'none'; document.getElementById('ui').style.display = 'block'; initLevel(); }
+    function pauseGame() {
+      if (state !== 'PLAYING' && state !== 'BOSS') return;
+      pausedFrom = state; state = 'PAUSED'; dragging = false;
+      $('pauseDesc').textContent = `Zone ${level} · ✨ ${Math.round(aura)} aura`;
+      $('pauseModal').style.display = 'flex';
+      if (actx && actx.state === 'running') actx.suspend();
+    }
+    function resumeGame() {
+      if (state !== 'PAUSED') return;
+      state = pausedFrom; $('pauseModal').style.display = 'none';
+      lastTime = performance.now();
+      if (actx) actx.resume();
+    }
+
+    // ----- Run / zone flow -----
+    function startGame() {
+      initAudio(); $('startModal').style.display = 'none'; $('ui').style.display = 'block';
+      newRun();
+    }
+    function newRun() {
+      level = 1; aura = 0; carrySquad = 0;
+      upgrades = { recruits: 0, rate: 0, dmg: 0, shield: 0 };
+      initLevel();
+    }
 
     function generateGateAction(isBad) {
       if (isBad) {
-        return Math.random() > 0.5 ? { text: `-10 SQUAD`, type: 'SQUAD', val: -10 } : { text: `-250 AURA`, type: 'AURA', val: -250 };
-      } else {
-        const types = ['SQUAD', 'FORM_WIDE', 'FORM_SPEAR', 'AURA'];
-        const type = types[Math.floor(Math.random() * types.length)];
-        if (type === 'SQUAD') return { text: `+${Math.floor(Math.random()*15)+5} SQUAD`, type: 'SQUAD', val: Math.floor(Math.random()*15)+5 };
-        if (type === 'FORM_WIDE') return { text: `WIDE FORMATION`, type: 'FORM', val: 'WIDE' };
-        if (type === 'FORM_SPEAR') return { text: `SPEARHEAD`, type: 'FORM', val: 'SPEARHEAD' };
-        return { text: `+500 AURA`, type: 'AURA', val: 500 };
+        const loss = 8 + level * 2, r = Math.random();
+        if (level >= 2 && r < 0.35) { const pc = level >= 5 ? 40 : 30; return { text: `-${pc}% SQUAD`, type: 'SQUADPCT', val: -pc / 100, isBad: true }; }
+        return r < 0.65 ? { text: `-${loss} SQUAD`, type: 'SQUAD', val: -loss, isBad: true }
+                        : { text: `-250 AURA`, type: 'AURA', val: -250, isBad: true };
       }
+      const r = Math.random();
+      if (r < 0.45) { const v = Math.floor(Math.random() * 12) + 6 + level * 2; return { text: `+${v} SQUAD`, type: 'SQUAD', val: v, cap: v + 8 }; }
+      if (r < 0.75) {
+        const f = ['WIDE', 'SPEARHEAD', 'GRID'][Math.floor(Math.random() * 3)];
+        return { text: f === 'GRID' ? 'GRID FORMATION' : f === 'WIDE' ? 'WIDE FORMATION' : 'SPEARHEAD', type: 'FORM', val: f };
+      }
+      return { text: `+500 AURA`, type: 'AURA', val: 500 };
+    }
+    function makeGatePair(y, allowBad) {
+      const badSide = allowBad && Math.random() < 0.45 ? (Math.random() < 0.5 ? 'left' : 'right') : null;
+      let left = generateGateAction(badSide === 'left'), right = generateGateAction(badSide === 'right');
+      let guard = 0;
+      while (!left.isBad && !right.isBad && left.text === right.text && guard++ < 10) right = generateGateAction(false);
+      return { y, left: { x: -95, ...left, hitTime: 0 }, right: { x: 95, ...right, hitTime: 0 }, active: true };
+    }
+    function spawnSwarmRow(y) {
+      // 5 slots across the road; one is always left empty so there's a gap to slip through.
+      const slots = [-150, -75, 0, 75, 150], gap = Math.floor(Math.random() * slots.length);
+      const phase = Math.random() * Math.PI * 2;
+      slots.forEach((x, i) => {
+        if (i === gap) return;
+        const hp = Math.round((20 + level * 6) * enemyHpMul());
+        entities.enemies.push({ x, baseX: x, y, phase, hp, maxHp: hp, type: 'SWARM', aura: 50, active: true, hitTime: 0 });
+      });
+    }
+    function spawnTanks(y) {
+      const hp = Math.round((80 + level * 25) * enemyHpMul());
+      for (const x of (level >= 4 && Math.random() < 0.5 ? [-130, 0, 130] : [-80, 80])) entities.enemies.push({ x, baseX: x, y, phase: 0, hp, maxHp: hp, type: 'TANK', aura: 150, active: true, hitTime: 0 });
     }
 
     function initLevel() {
-      state = 'PLAYING'; trackProgress = 0; trackLength = 5000 + (level * 1000); baseSpeed = 240 + (level * 10);
-      squad.x = 0; squad.targetX = 0; squad.count = 4; squad.visualCount = 4; squad.formation = 'GRID';
-      timeScale = 1.0; slowMoTimer = 0;
-      for(let key in entities) entities[key].length = 0;
-      boss = null; document.getElementById('bossUI').style.display = 'none'; document.getElementById('endModal').style.display = 'none';
-      document.getElementById('levelBadge').innerText = `ZONE ${level}`; 
-      document.getElementById('tierBadge').innerText = `FORMATION: GRID`;
+      state = 'PLAYING'; trackProgress = 0; zoneTime = 0;
+      trackLength = 5000 + level * 1000; baseSpeed = 240 + level * 10;
+      squad.x = 0; squad.targetX = 0; squad.drawX = 0; squad.formation = 'GRID'; squad.shootTimer = 0;
+      squad.fireRate = 4.5 * (1 + 0.15 * upgrades.rate);
+      squad.count = Math.max(8 + upgrades.recruits * 4, carrySquad); squad.visualCount = squad.count;
+      shieldCharges = upgrades.shield; lastStandUsed = false;
+      timeScale = 1.0; slowMoTimer = 0; damageFlash = 0; zoneAuraStart = aura;
+      for (const key in entities) entities[key].length = 0;
+      boss = null; $('bossUI').style.display = 'none'; $('endModal').style.display = 'none';
+      $('levelBadge').textContent = `ZONE ${level}`;
+      $('tierBadge').textContent = 'FORMATION: GRID';
+      $('hint').style.display = 'block';
+      save.bestZone = Math.max(save.bestZone, level); persist();
       updateAuraUI();
 
-      let y = 600;
-      while (y < trackLength - 600) {
-        if (Math.random() < 0.45) {
-          const isRightBad = Math.random() < 0.4;
-          entities.gates.push({
-            y: y,
-            left: { x: -75, ...generateGateAction(false), hp: 20 },
-            right: { x: 75, ...generateGateAction(isRightBad), hp: 20, isBad: isRightBad },
-            active: true
-          });
-          y += 600;
-        } else {
-          const type = Math.random() < 0.5 ? 'SWARM' : 'TANK';
-          for (let b = 0; b < (type === 'SWARM' ? 4 : 2); b++) {
-            entities.enemies.push({
-              x: type === 'SWARM' ? -120 + b * 80 : -70 + b * 140, y: y,
-              hp: type === 'SWARM' ? 20 + level * 5 : 80 + level * 20, 
-              maxHp: type === 'SWARM' ? 20 + level * 5 : 80 + level * 20,
-              type: type, aura: type === 'SWARM' ? 50 : 150, active: true, hitTime: 0
-            });
-          }
-          y += 500;
-        }
+      // Safe start: the first ~3 s only has a friendly gate; enemies begin further up the track.
+      entities.gates.push(makeGatePair(800, false));
+      let y = 1350;
+      const gap = Math.max(330, 500 - level * 25);
+      while (y < trackLength - 500) {
+        if (Math.random() < Math.max(0.3, 0.44 - level * 0.02)) { entities.gates.push(makeGatePair(y, true)); y += 600; continue; }
+        const r = Math.random();
+        if (r < 0.5) spawnSwarmRow(y);
+        else spawnTanks(y);
+        if (level >= 3 && Math.random() < 0.25 + level * 0.05) spawnSwarmRow(y + 170); // later zones stack waves
+        y += gap + (level >= 3 ? 120 : 0);
       }
     }
 
     function spawnBoss() {
-      state = 'BOSS'; 
-      boss = { 
-        x: 0, y: trackProgress + 600, 
-        hp: 2000 + (level * 800), maxHp: 2000 + (level * 800), 
-        state: 'IDLE', timer: 0, hitTime: 0, active: true,
-        targetX: 0
-      };
-      document.getElementById('bossUI').style.display = 'flex';
-      baseSpeed = 80; // Slow down track for arena feel
+      state = 'BOSS';
+      const hp = bossHp();
+      boss = { x: 0, y: trackProgress + 600, hp, maxHp: hp, state: 'IDLE', timer: 1.0, hitTime: 0, active: true, targetX: 0, lanes: [], shielded: false };
+      $('bossUI').style.display = 'flex'; $('bossHpBar').style.width = '100%';
+      baseSpeed = 80;
     }
 
-    function updateAuraUI() {
-      const b = document.getElementById('auraBadge');
-      b.innerText = `✨ ${Math.round(aura)} AURA`;
-      b.style.color = aura < 0 ? '#ef4444' : '#fff'; b.style.borderColor = aura < 0 ? '#ef4444' : '#facc15';
-    }
+    function addAura(v) { aura = Math.max(0, aura + v); updateAuraUI(); }
+    function updateAuraUI() { $('auraBadge').textContent = `✨ ${Math.round(aura)} AURA`; }
 
-    function spawnExplosion(x, y, color, count = 12) {
+    function spawnExplosion(x, y, color, count = 12, size = 1) {
       for (let i = 0; i < count; i++) {
-        const ang = Math.random() * Math.PI * 2; const spd = 80 + Math.random() * 250;
-        entities.particles.push({ x, y, vx: Math.cos(ang) * spd, vy: Math.sin(ang) * spd, color, life: 0.5, size: 6 + Math.random() * 8 });
+        const ang = Math.random() * Math.PI * 2, spd = 80 + Math.random() * 250;
+        entities.particles.push({ x, y, vx: Math.cos(ang) * spd, vy: Math.sin(ang) * spd, color, life: 0.5, size: (6 + Math.random() * 8) * size });
       }
     }
-    function addFloatText(x, y, str, color) { entities.texts.push({ x, y, str, color, life: 0.8, vy: 70 }); }
+    function addFloatText(x, y, str, color) { entities.texts.push({ x, y, str, color, life: 0.9, vy: 70 }); }
+    function triggerShake(amount) { screenShake = Math.max(screenShake, amount); }
+    function hurtFlash() { damageFlash = 0.15; }
 
+    function loseTroops(n, x, y) {
+      if (shieldCharges > 0) {
+        shieldCharges--; addFloatText(squad.x, trackProgress + 90, 'SHIELDED!', '#facc15');
+        spawnExplosion(x, y, '#facc15', 18); playSound('powerup'); triggerShake(6);
+        return false;
+      }
+      squad.count -= n; hurtFlash(); triggerShake(15); playSound('damage');
+      if (squad.count <= 3 && !lastStandUsed && zoneTime > 3 && squad.count > 0) triggerLastStand();
+      if (squad.count < 1) { gameOver(); return true; }
+      return false;
+    }
     function triggerLastStand() {
-      if (slowMoTimer <= 0) {
-        slowMoTimer = 2.0; // 2 seconds of slow-mo
-        playSound('powerup');
-        addFloatText(squad.x, trackProgress + 100, "LAST STAND!", "#38bdf8");
+      lastStandUsed = true; slowMoTimer = 2.0; playSound('powerup');
+      addFloatText(squad.x, trackProgress + 100, 'LAST STAND!', '#38bdf8');
+    }
+
+    // ----- Main loop: an exception is logged and the game keeps running -----
+    let lastTime = performance.now(), lastErr = '';
+    function loop(now) {
+      requestAnimationFrame(loop);
+      const rawDt = Math.min((now - lastTime) / 1000, 0.05); lastTime = now;
+      try {
+        if (state === 'PLAYING' || state === 'BOSS') {
+          if (slowMoTimer > 0) { slowMoTimer -= rawDt; timeScale = 0.35; } else timeScale = 1.0;
+          $('slowmoOverlay').style.opacity = slowMoTimer > 0 ? '1' : '0';
+          update(rawDt * timeScale, rawDt);
+        }
+        render(rawDt);
+      } catch (err) {
+        const msg = String(err && err.stack || err);
+        if (msg !== lastErr) { console.error('[game loop]', err); lastErr = msg; }
       }
     }
 
-    let lastTime = performance.now();
-    function loop(now) {
-      let rawDt = Math.min((now - lastTime) / 1000, 0.05); lastTime = now;
-      
-      // Last Stand Slow-Mo Logic
-      if (slowMoTimer > 0) {
-        slowMoTimer -= rawDt;
-        timeScale = 0.35; // 35% speed
-        document.getElementById('slowmoOverlay').style.opacity = '1';
+    function formationLayout(n, form) {
+      // Visible troopers are capped and packed so the squad stays on the road and on screen.
+      const slots = [];
+      if (form === 'SPEARHEAD') {
+        const rows = Math.min(5, Math.ceil(Math.sqrt(n))), m = Math.min(n, rows * rows);
+        for (let i = 0; i < m; i++) { const r = Math.floor(Math.sqrt(i)), c = i - r * r; slots.push([(c - r) * 14, -r * 20]); }
       } else {
-        timeScale = 1.0;
-        document.getElementById('slowmoOverlay').style.opacity = '0';
+        const wide = form === 'WIDE', sp = wide ? 19 : 22;
+        const cols = wide ? Math.min(12, n) : Math.min(9, Math.max(1, Math.ceil(Math.sqrt(n))));
+        const rows = Math.min(wide ? 3 : 4, Math.ceil(n / cols)), m = Math.min(n, cols * rows);
+        for (let i = 0; i < m; i++) {
+          const r = Math.floor(i / cols), c = i % cols, inRow = Math.min(cols, m - r * cols);
+          slots.push([(c - (inRow - 1) / 2) * sp, -r * sp]);
+        }
       }
-      
-      const dt = rawDt * timeScale; // Apply timescale to game logic
-
-      if (state === 'PLAYING' || state === 'BOSS') update(dt, rawDt);
-      render(); requestAnimationFrame(loop);
+      let hw = 0; for (const s of slots) hw = Math.max(hw, Math.abs(s[0]));
+      return { slots, hw: hw + 8 };
     }
 
     function update(dt, rawDt) {
-      trackProgress += baseSpeed * dt;
-      
-      // Dynamic Atmospheres (Blue -> Orange -> Purple)
+      trackProgress += baseSpeed * dt; zoneTime += dt;
+      if (zoneTime > 4 && $('hint').style.display !== 'none') hideHint();
       const pct = trackProgress / trackLength;
-      if (state === 'BOSS') zoneColor = '#3b0764'; // Deep Purple Boss Arena
-      else if (pct < 0.4) zoneColor = '#0f172a'; // Training Blue
-      else if (pct < 0.8) zoneColor = '#431407'; // Industrial Orange
-      else zoneColor = '#3b0764';
-      document.body.style.backgroundColor = zoneColor;
 
       if (state === 'PLAYING') {
-        document.getElementById('progressBar').style.width = `${Math.min(100, (trackProgress / trackLength) * 100)}%`;
+        $('progressBar').style.width = `${Math.min(100, pct * 100)}%`;
         if (trackProgress > trackLength) spawnBoss();
       }
 
-      squad.x += (squad.targetX - squad.x) * 12 * dt;
-      
-      // Visual Squad Growth (Streaming in)
+      squad.x += (squad.targetX - squad.x) * Math.min(1, 12 * dt);
       if (squad.visualCount < squad.count) {
         squad.visualCount += (squad.count - squad.visualCount) * 4 * dt;
         if (squad.count - squad.visualCount < 0.5) squad.visualCount = squad.count;
-      } else if (squad.visualCount > squad.count) {
-        squad.visualCount = squad.count; // Snap down on damage
-      }
+      } else squad.visualCount = squad.count;
 
-      // Shooting logic
+      const layout = formationLayout(Math.max(1, Math.ceil(squad.visualCount)), squad.formation);
+      const lim = Math.max(0, ROAD_HALF - layout.hw);
+      squad.drawX = Math.max(-lim, Math.min(lim, squad.x));
+
+      // Shooting
       squad.shootTimer += dt;
       const activeCount = Math.floor(squad.visualCount);
-      if (squad.shootTimer >= (1 / squad.fireRate) && activeCount > 0) {
+      if (squad.shootTimer >= 1 / squad.fireRate && activeCount > 0) {
         squad.shootTimer = 0; playSound('shoot');
-        // Width of fire depends on formation
         const numBullets = Math.min(activeCount, squad.formation === 'WIDE' ? 12 : (squad.formation === 'SPEARHEAD' ? 5 : 8));
-        const spreadMultiplier = squad.formation === 'WIDE' ? 22 : (squad.formation === 'SPEARHEAD' ? 8 : 14);
-        
+        const spreadMul = squad.formation === 'WIDE' ? 20 : (squad.formation === 'SPEARHEAD' ? 8 : 14);
+        const dmg = bulletDamage();
         for (let i = 0; i < numBullets; i++) {
-          const spread = (i - (numBullets - 1) / 2) * spreadMultiplier;
-          entities.bullets.push({
-            x: squad.x + spread, y: trackProgress + 45, vy: 900, dmg: 10 + (level * 2), color: '#38bdf8', life: squad.fireRange / 900
-          });
+          const bx = Math.max(-ROAD_HALF, Math.min(ROAD_HALF, squad.drawX + (i - (numBullets - 1) / 2) * spreadMul));
+          entities.bullets.push({ x: bx, y: trackProgress + 45, vy: 900, dmg, life: squad.fireRange / 900 });
         }
       }
 
-      // Boss Logic: Readable Attack Patterns
+      // Boss: telegraphed laser, faster in later zones; the laser takes a share of the squad
       if (state === 'BOSS' && boss.active) {
-        boss.y = trackProgress + 450;
-        boss.timer -= dt;
-
+        boss.y = trackProgress + 450; boss.timer -= dt;
+        if (boss.hitTime > 0) boss.hitTime -= dt;
         if (boss.state === 'IDLE') {
-          boss.x += (0 - boss.x) * 2 * dt; // Center up
+          boss.x += (0 - boss.x) * 2 * dt;
           if (boss.timer <= 0) {
-            boss.state = 'TELEGRAPH'; boss.timer = 1.5; // 1.5s warning
-            boss.targetX = squad.x; // Lock onto player's current position
-            playSound('powerup'); // Warning sound
+            boss.state = 'TELEGRAPH'; boss.timer = Math.max(0.9, 1.5 - 0.1 * (level - 1));
+            boss.targetX = squad.x; boss.lanes = [squad.x];
+            if (level >= 3) { // later zones: a second laser lane blocks one escape route
+              const side = squad.x > 0 ? -1 : 1, x2 = squad.x + side * (130 + Math.random() * 60);
+              if (Math.abs(x2) <= 170) boss.lanes.push(x2);
+            }
+            playSound('powerup');
           }
         } else if (boss.state === 'TELEGRAPH') {
-          // Draw warning handled in render
           if (boss.timer <= 0) {
-            boss.state = 'STRIKE'; boss.timer = 0.8; // 0.8s laser duration
-            playSound('laser');
-            triggerShake(15);
+            boss.state = 'STRIKE'; boss.timer = level >= 5 ? 0.95 : 0.8; boss.shielded = false;
+            playSound('laser'); triggerShake(15);
           }
         } else if (boss.state === 'STRIKE') {
-          // Continuous laser damage if player in zone
-          if (Math.abs(squad.x - boss.targetX) < 60) {
-            squad.count -= 10 * dt;
-            if (squad.count <= 3 && slowMoTimer <= 0) triggerLastStand();
-            document.getElementById('damageOverlay').style.opacity = '1';
-            setTimeout(() => document.getElementById('damageOverlay').style.opacity = '0', 100);
-            if (squad.count <= 0) { gameOver(); return; }
+          if (boss.lanes.some(lx => Math.abs(squad.x - lx) < 60)) {
+            if (!boss.shielded && shieldCharges > 0) {
+              boss.shielded = true; shieldCharges--; addFloatText(squad.x, trackProgress + 90, 'SHIELDED!', '#facc15'); playSound('powerup');
+            }
+            if (!boss.shielded) {
+              squad.count -= Math.max(10, squad.count * 0.9) * dt; damageFlash = 0.12; // ~half the squad per full strike
+              if (squad.count <= 3 && !lastStandUsed && squad.count >= 1) triggerLastStand();
+              if (squad.count < 1) { gameOver(); return; }
+            }
           }
-          if (boss.timer <= 0) {
-            boss.state = 'IDLE'; boss.timer = 2.0; // Cooldown
-          }
+          if (boss.timer <= 0) { boss.state = 'IDLE'; boss.timer = Math.max(0.8, 2.0 - 0.25 * (level - 1)); }
         }
-
-        document.getElementById('bossHpBar').style.width = `${Math.max(0, (boss.hp / boss.maxHp) * 100)}%`;
+        $('bossHpBar').style.width = `${Math.max(0, (boss.hp / boss.maxHp) * 100)}%`;
       }
 
-      // Update Enemies
-      for (let e of entities.enemies) {
+      // Enemies
+      for (const e of entities.enemies) {
         if (!e.active) continue;
-        if (e.type === 'SWARM') {
-          e.y -= 80 * dt; // Fast movement
-          // Swarm sweeps side to side
-          e.x += Math.sin(trackProgress * 0.01 + e.y) * 120 * dt; 
-        } else {
-          e.y -= 30 * dt; // Tank slow
-        }
-        
-        if (Math.hypot(squad.x - e.x, trackProgress - e.y) < 45) {
-          e.active = false; squad.count -= (e.type === 'TANK' ? 8 : 2);
-          screenShake = 15; playSound('damage'); spawnExplosion(e.x, e.y, '#ef4444', 25);
-          if (squad.count <= 3 && slowMoTimer <= 0) triggerLastStand();
-          if (squad.count <= 0) { gameOver(); return; }
+        if (e.hitTime > 0) e.hitTime -= dt;
+        if (e.type === 'SWARM') { e.y -= (80 + level * 5) * dt; e.x = e.baseX + Math.sin(zoneTime * 1.6 + e.phase) * 22; }
+        else e.y -= 30 * dt;
+        if (e.y < trackProgress - 250) { e.active = false; continue; } // slipped past: clean up
+        // hit box grows a little with the formation (still narrow enough to fit through swarm gaps)
+        if (Math.abs(squad.x - e.x) < Math.min(layout.hw, 40) + 20 && Math.abs(trackProgress - e.y) < 30) {
+          e.active = false; spawnExplosion(e.x, e.y, '#ef4444', 25);
+          if (loseTroops(e.type === 'TANK' ? tankDamage() : swarmDamage(), e.x, e.y)) return;
         }
       }
 
-      // Update Bullets
+      // Bullets
       for (let i = entities.bullets.length - 1; i >= 0; i--) {
         const b = entities.bullets[i]; b.y += b.vy * dt; b.life -= dt; let hit = false;
-        
-        for (let g of entities.gates) {
-          if (!g.active || hit) continue;
-          if (Math.abs(b.y - g.y) < 25) {
-            if (b.x < 0 && Math.abs(b.x - g.left.x) < 70) { if (g.left.type === 'SQUAD' && !g.left.isBad) g.left.val += 0.2; g.left.hitTime = 0.1; hit = true; }
-            else if (b.x > 0 && Math.abs(b.x - g.right.x) < 70) { if (g.right.type === 'SQUAD' && !g.right.isBad) g.right.val += 0.2; g.right.hitTime = 0.1; hit = true; }
+        for (const g of entities.gates) {
+          if (!g.active || hit || Math.abs(b.y - g.y) >= 25) continue;
+          const side = b.x < 0 ? g.left : g.right;
+          if (Math.abs(b.x - side.x) < 90) {
+            if (side.type === 'SQUAD' && !side.isBad) side.val = Math.min(side.cap, side.val + 0.1);
+            side.hitTime = 0.12; hit = true;
           }
         }
-        
-        for (let e of entities.enemies) {
+        for (const e of entities.enemies) {
           if (!e.active || hit) continue;
           if (Math.hypot(b.x - e.x, b.y - e.y) < 40) {
-            e.hp -= b.dmg; e.hitTime = 0.1; hit = true; spawnExplosion(b.x, b.y, '#38bdf8', 2);
-            if (e.hp <= 0) { 
-              e.active = false; aura += e.aura; updateAuraUI(); playSound('hit'); 
-              addFloatText(e.x, e.y, `+${e.aura}`, '#facc15'); spawnExplosion(e.x, e.y, '#facc15', 16); 
+            e.hp -= b.dmg; e.hitTime = 0.1; hit = true; spawnExplosion(b.x, b.y, '#38bdf8', 2, 0.4);
+            if (e.hp <= 0) {
+              e.active = false; addAura(e.aura); playSound('hit');
+              addFloatText(e.x, e.y, `+${e.aura}`, '#facc15'); spawnExplosion(e.x, e.y, '#facc15', 16);
             }
           }
         }
-
-        if (state === 'BOSS' && boss.active && !hit) {
-          if (Math.hypot(b.x - boss.x, b.y - boss.y) < 80) {
-            boss.hp -= b.dmg; boss.hitTime = 0.1; hit = true; spawnExplosion(b.x, b.y, '#38bdf8', 3);
-            if (boss.hp <= 0) { boss.active = false; aura += 5000; updateAuraUI(); playSound('powerup'); spawnExplosion(boss.x, boss.y, '#facc15', 60); victory(); }
+        if (state === 'BOSS' && boss.active && !hit && Math.hypot(b.x - boss.x, b.y - boss.y) < 80) {
+          boss.hp -= b.dmg; boss.hitTime = 0.06; hit = true;
+          if (Math.random() < 0.35) spawnExplosion(b.x, b.y, '#38bdf8', 1, 0.35);
+          if (boss.hp <= 0) {
+            boss.active = false; addAura(5000 + (level - 1) * 1000); playSound('powerup');
+            spawnExplosion(boss.x, boss.y, '#facc15', 60); triggerShake(20); victory(); return;
           }
         }
         if (hit || b.life <= 0) { entities.bullets[i] = entities.bullets[entities.bullets.length - 1]; entities.bullets.pop(); }
       }
 
-      // Check Gate pass
-      for (let g of entities.gates) {
+      // Gate pass
+      for (const g of entities.gates) {
+        g.left.hitTime = Math.max(0, g.left.hitTime - dt); g.right.hitTime = Math.max(0, g.right.hitTime - dt);
         if (!g.active) continue;
         if (trackProgress >= g.y && trackProgress - baseSpeed * dt < g.y) {
           g.active = false; const chosen = squad.x < 0 ? g.left : g.right;
-          if (chosen.type === 'SQUAD') { squad.count = Math.max(1, squad.count + Math.round(chosen.val)); }
-          else if (chosen.type === 'FORM') { 
-            squad.formation = chosen.val; 
-            const badgeUI = document.getElementById('tierBadge');
-            badgeUI.innerText = `FORMATION: ${chosen.val}`;
+          if (chosen.type === 'SQUAD') {
+            if (chosen.val < 0) { if (loseTroops(-chosen.val, chosen.x, g.y)) return; }
+            else squad.count = squad.count + Math.round(chosen.val);
+          } else if (chosen.type === 'SQUADPCT') {
+            if (loseTroops(Math.max(4, Math.round(squad.count * -chosen.val)), chosen.x, g.y)) return;
+          } else if (chosen.type === 'FORM') {
+            squad.formation = chosen.val;
+            const badgeUI = $('tierBadge'); badgeUI.textContent = `FORMATION: ${chosen.val}`;
             badgeUI.classList.add('tier-pop'); setTimeout(() => badgeUI.classList.remove('tier-pop'), 200);
-          }
-          else if (chosen.type === 'AURA') { aura += chosen.val; updateAuraUI(); }
-          
-          playSound('powerup'); addFloatText(squad.x, g.y, chosen.text, chosen.isBad ? '#ef4444' : '#38bdf8');
-          spawnExplosion(chosen.x, g.y, chosen.isBad ? '#ef4444' : '#38bdf8', 30);
+          } else if (chosen.type === 'AURA') addAura(chosen.val);
+          if (!chosen.isBad) playSound('powerup');
+          const label = chosen.type === 'SQUAD' && !chosen.isBad ? `+${Math.round(chosen.val)} SQUAD` : chosen.text;
+          addFloatText(squad.x, g.y, label, gateColor(chosen));
+          spawnExplosion(chosen.x, g.y, gateColor(chosen), 30);
         }
       }
 
-      // Particles
       for (let i = entities.particles.length - 1; i >= 0; i--) {
         const p = entities.particles[i]; p.x += p.vx * dt; p.y += p.vy * dt; p.vx *= 0.95; p.vy *= 0.95; p.life -= dt;
         if (p.life <= 0) { entities.particles[i] = entities.particles[entities.particles.length - 1]; entities.particles.pop(); }
@@ -427,13 +559,10 @@
         const t = entities.texts[i]; t.y += t.vy * dt; t.life -= dt;
         if (t.life <= 0) { entities.texts[i] = entities.texts[entities.texts.length - 1]; entities.texts.pop(); }
       }
-      
-      // Shake decay
-      if (screenShake > 0) screenShake -= rawDt * 40; if (screenShake < 0) screenShake = 0;
+      if (screenShake > 0) screenShake = Math.max(0, screenShake - rawDt * 40);
     }
 
-    // ----- 3D VOXEL RENDERING ENGINE -----
-    // Increased base size significantly for better readability
+    // ----- Rendering -----
     function drawVoxel(ctx, x, y, z, w, h, d, hexColor) {
       const isoX = x; const isoY = y - z;
       ctx.fillStyle = hexColor; ctx.beginPath(); ctx.moveTo(isoX, isoY - h); ctx.lineTo(isoX + w/2, isoY - h - d/3); ctx.lineTo(isoX, isoY - h - (2*d)/3); ctx.lineTo(isoX - w/2, isoY - h - d/3); ctx.closePath(); ctx.fill();
@@ -445,149 +574,193 @@
       let R = (num >> 16) + amt, G = (num >> 8 & 0x00FF) + amt, B = (num & 0x0000FF) + amt;
       return "#" + (0x1000000 + (R<255?R<1?0:R:255)*0x10000 + (G<255?G<1?0:G:255)*0x100 + (B<255?B<1?0:B:255)).toString(16).slice(1);
     }
-    function drawShadow(ctx, x, y, radius) { ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.beginPath(); ctx.ellipse(x, y - radius*0.2, radius, radius*0.3, 0, 0, Math.PI*2); ctx.fill(); }
+    function drawShadow(ctx, x, y, radius) { ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.beginPath(); ctx.ellipse(x, y - radius*0.2, radius, radius*0.3, 0, 0, Math.PI*2); ctx.fill(); }
 
-    function drawGate(side, y, color, isHit) {
+    // Gate colours by effect: green = growth, red = loss, blue = formation, gold = aura
+    function gateColor(side) {
+      if (side.isBad) return '#ef4444';
+      if (side.type === 'SQUAD') return '#22c55e';
+      if (side.type === 'FORM') return '#38bdf8';
+      return '#facc15';
+    }
+    function mixWhite(hex, t) {
+      const n = parseInt(hex.slice(1), 16), m = c => Math.round(c + (255 - c) * t);
+      return `rgb(${m(n >> 16)},${m((n >> 8) & 255)},${m(n & 255)})`;
+    }
+    function drawGate(side, y) {
+      const col = gateColor(side), flash = Math.min(1, side.hitTime / 0.12);
+      const c = flash > 0 ? mixWhite(col, flash * 0.75) : col;
       ctx.save(); ctx.translate(side.x, y);
-      ctx.fillStyle = isHit ? '#ffffff' : color; ctx.globalAlpha = isHit ? 0.9 : 0.3; ctx.fillRect(-85, -5, 170, 10);
-      ctx.globalAlpha = 1.0; ctx.strokeStyle = isHit ? '#ffffff' : color; ctx.lineWidth = 4; ctx.strokeRect(-85, -5, 170, 10);
-      ctx.save(); ctx.scale(1, -1); ctx.fillStyle = '#ffffff'; ctx.strokeStyle = '#000000'; ctx.lineWidth = 4; ctx.font = '900 16px Arial Black'; ctx.textAlign = 'center';
+      ctx.globalAlpha = 0.28 + flash * 0.3; ctx.fillStyle = c; ctx.fillRect(-88, -7, 176, 14);
+      ctx.globalAlpha = 1; ctx.strokeStyle = c; ctx.lineWidth = 4; ctx.strokeRect(-88, -7, 176, 14);
+      ctx.scale(1, -1);
       let text = side.text; if (side.type === 'SQUAD' && !side.isBad) text = `+${Math.round(side.val)} SQUAD`;
-      ctx.strokeText(text, 0, 18); ctx.fillText(text, 0, 18);
-      ctx.restore(); ctx.restore();
+      ctx.font = font(15); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      const tw = Math.min(170, ctx.measureText(text).width + 18);
+      ctx.fillStyle = 'rgba(2,6,23,0.85)'; ctx.beginPath(); ctx.roundRect(-tw / 2, 13, tw, 24, 12); ctx.fill();
+      ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.stroke();
+      ctx.fillStyle = side.isBad ? '#fecaca' : '#ffffff'; ctx.fillText(text, 0, 26, 160);
+      ctx.restore();
     }
 
-    function render() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height); // Background handled by body CSS
-      const cx = canvas.width / 2, cy = canvas.height * 0.82;
+    function render(rawDt) {
+      // Zone atmosphere drawn on the canvas itself: blue -> industrial orange -> purple arena
+      const pct = trackProgress / trackLength;
+      const target = (state === 'BOSS' || pct >= 0.8) ? ZONE_COLORS.arena : pct >= 0.4 ? ZONE_COLORS.industrial : ZONE_COLORS.train;
+      const k = Math.min(1, (rawDt || 0.016) * 1.5);
+      for (let i = 0; i < 3; i++) bgColor[i] += (target[i] - bgColor[i]) * k;
+      const bg = `rgb(${bgColor.map(Math.round).join(',')})`;
+      ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      const vg = ctx.createLinearGradient(0, 0, 0, H);
+      vg.addColorStop(0, 'rgba(2,6,23,0.55)'); vg.addColorStop(0.5, 'rgba(2,6,23,0)'); vg.addColorStop(1, 'rgba(2,6,23,0.35)');
+      ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
+      document.body.style.backgroundColor = bg;
+      $('damageOverlay').style.opacity = damageFlash > 0 ? '1' : '0';
+      if (damageFlash > 0) damageFlash -= rawDt || 0.016;
 
+      const cy = H * 0.8;
       ctx.save();
       if (screenShake > 0) ctx.translate((Math.random() - 0.5) * screenShake, (Math.random() - 0.5) * screenShake);
-      ctx.translate(cx, cy);
+      ctx.translate(W / 2, cy); ctx.scale(VS, VS);
+      const top = -cy / VS, bottom = (H - cy) / VS;
 
-      // Track rendering
-      const roadW = 380;
-      ctx.fillStyle = 'rgba(15, 23, 42, 0.4)'; ctx.fillRect(-roadW / 2, -cy, roadW, canvas.height);
-      ctx.fillStyle = '#38bdf8'; ctx.fillRect(-roadW / 2 - 8, -cy, 8, canvas.height); ctx.fillRect(roadW / 2, -cy, 8, canvas.height);
-
+      ctx.fillStyle = 'rgba(2, 6, 23, 0.45)'; ctx.fillRect(-ROAD_HALF, top, ROAD_HALF * 2, bottom - top);
+      ctx.fillStyle = '#38bdf8'; ctx.fillRect(-ROAD_HALF - 8, top, 8, bottom - top); ctx.fillRect(ROAD_HALF, top, 8, bottom - top);
       const spacing = 180, offset = -(trackProgress % spacing);
       ctx.strokeStyle = 'rgba(56, 189, 248, 0.2)'; ctx.lineWidth = 4;
-      for (let y = -cy + offset - spacing; y < cy + spacing; y += spacing) {
-        ctx.beginPath(); ctx.moveTo(-roadW / 2, y); ctx.lineTo(roadW / 2, y); ctx.stroke();
-      }
+      for (let y = top + offset - spacing; y < bottom + spacing; y += spacing) { ctx.beginPath(); ctx.moveTo(-ROAD_HALF, y); ctx.lineTo(ROAD_HALF, y); ctx.stroke(); }
 
       ctx.save(); ctx.scale(1, -1); ctx.translate(0, -trackProgress);
 
-      // Boss Telegraph/Attack Marker
-      if (state === 'BOSS' && boss && boss.active) {
-        if (boss.state === 'TELEGRAPH' || boss.state === 'STRIKE') {
-          ctx.fillStyle = boss.state === 'TELEGRAPH' ? 'rgba(239, 68, 68, 0.3)' : 'rgba(239, 68, 68, 0.8)';
-          ctx.fillRect(boss.targetX - 60, trackProgress - 200, 120, boss.y - trackProgress + 200);
+      if (state !== 'START' && boss && boss.active && (boss.state === 'TELEGRAPH' || boss.state === 'STRIKE')) {
+        const strike = boss.state === 'STRIKE';
+        const y0 = trackProgress - 260, len = boss.y - trackProgress + 260;
+        for (const lx of boss.lanes) {
+          ctx.fillStyle = strike ? 'rgba(239, 68, 68, 0.85)' : 'rgba(239, 68, 68, 0.28)';
+          ctx.fillRect(lx - 60, y0, 120, len);
+          if (strike) { ctx.fillStyle = 'rgba(255,255,255,0.75)'; ctx.fillRect(lx - 14, y0, 28, len); }
+          else { ctx.strokeStyle = 'rgba(239,68,68,0.9)'; ctx.lineWidth = 3; ctx.setLineDash([14, 10]); ctx.strokeRect(lx - 60, y0, 120, len); ctx.setLineDash([]); }
         }
       }
 
-      for (let g of entities.gates) {
-        if (!g.active) continue;
-        drawGate(g.left, g.y, g.left.isBad ? '#ef4444' : '#22c55e', g.left.hitTime > 0);
-        drawGate(g.right, g.y, g.right.isBad ? '#ef4444' : '#38bdf8', g.right.hitTime > 0);
-      }
+      for (const g of entities.gates) { if (!g.active) continue; drawGate(g.left, g.y); drawGate(g.right, g.y); }
 
-      // Enemies (Larger Voxel scaling)
-      for (let e of entities.enemies) {
+      for (const e of entities.enemies) {
         if (!e.active) continue;
-        if (e.hitTime > 0) e.hitTime -= 0.016;
-        drawShadow(ctx, e.x, e.y, 45);
+        drawShadow(ctx, e.x, e.y, 40);
         if (e.type === 'SWARM') {
-          // Agile Swarm Bot
-          drawVoxel(ctx, e.x, e.y, 0, 20, 24, 20, e.hitTime > 0 ? '#ffffff' : '#64748b'); 
-          drawVoxel(ctx, e.x, e.y+4, 18, 12, 6, 12, '#38bdf8'); // Cyan Core
+          drawVoxel(ctx, e.x, e.y, 0, 20, 24, 20, e.hitTime > 0 ? '#ffffff' : '#64748b');
+          drawVoxel(ctx, e.x, e.y + 4, 18, 12, 6, 12, '#38bdf8');
         } else {
-          // Heavy Tank Bot
-          drawVoxel(ctx, e.x, e.y, 0, 32, 28, 32, e.hitTime > 0 ? '#ffffff' : '#b45309'); 
-          drawVoxel(ctx, e.x, e.y, 28, 16, 16, 16, '#ea580c'); // Orange Head
+          drawVoxel(ctx, e.x, e.y, 0, 32, 28, 32, e.hitTime > 0 ? '#ffffff' : '#b45309');
+          drawVoxel(ctx, e.x, e.y, 28, 16, 16, 16, '#ea580c');
         }
-        // HP Bar
         ctx.save(); ctx.translate(e.x, e.y); ctx.scale(1, -1);
         ctx.fillStyle = '#000'; ctx.fillRect(-20, -40, 40, 6);
-        ctx.fillStyle = '#ef4444'; ctx.fillRect(-20, -40, 40 * (e.hp/e.maxHp), 6);
+        ctx.fillStyle = '#ef4444'; ctx.fillRect(-20, -40, 40 * Math.max(0, e.hp / e.maxHp), 6);
         ctx.restore();
       }
 
-      // Boss
-      if (state === 'BOSS' && boss && boss.active) {
-        if (boss.hitTime > 0) boss.hitTime -= 0.016;
+      if (boss && boss.active) {
+        const flash = boss.hitTime > 0;
         drawShadow(ctx, boss.x, boss.y, 100);
-        // Boss is massive
-        drawVoxel(ctx, boss.x, boss.y, 0, 80, 60, 60, boss.hitTime > 0 ? '#ffffff' : '#1e293b'); // Armor
-        drawVoxel(ctx, boss.x, boss.y, 60, 50, 45, 40, boss.hitTime > 0 ? '#ffffff' : '#eab308'); // Golden Head
-        // Glowing red eyes when attacking
+        drawVoxel(ctx, boss.x, boss.y, 0, 80, 60, 60, flash ? '#cbd5e1' : '#334155');
+        drawVoxel(ctx, boss.x, boss.y, 60, 50, 45, 40, flash ? '#fde68a' : '#eab308');
         const eyeColor = (boss.state === 'TELEGRAPH' || boss.state === 'STRIKE') ? '#ef4444' : '#000000';
-        drawVoxel(ctx, boss.x-15, boss.y+15, 80, 10, 10, 10, eyeColor); 
-        drawVoxel(ctx, boss.x+15, boss.y+15, 80, 10, 10, 10, eyeColor); 
+        drawVoxel(ctx, boss.x - 15, boss.y + 15, 80, 10, 10, 10, eyeColor);
+        drawVoxel(ctx, boss.x + 15, boss.y + 15, 80, 10, 10, 10, eyeColor);
       }
 
-      // Bullets (Cyan glowing laser lines)
       ctx.lineWidth = 6; ctx.lineCap = 'round'; ctx.strokeStyle = '#38bdf8';
-      for (let b of entities.bullets) {
-        ctx.beginPath(); ctx.moveTo(b.x, b.y); ctx.lineTo(b.x, b.y - 20); ctx.stroke();
-      }
+      ctx.beginPath();
+      for (const b of entities.bullets) { ctx.moveTo(b.x, b.y); ctx.lineTo(b.x, b.y - 20); }
+      ctx.stroke();
 
-      // Draw Squad with Streaming Expansion and Outlines
-      ctx.save(); ctx.translate(squad.x, trackProgress);
-      
-      const count = Math.ceil(squad.visualCount); // Use interpolated count
-      drawShadow(ctx, 0, 0, 50 + Math.min(count*2, 60));
-
-      // Calculate Formation Positions
-      for (let i = 0; i < count; i++) {
-        let ox = 0, oy = 0;
-        if (squad.formation === 'WIDE') {
-          const cols = Math.min(12, count);
-          const r = Math.floor(i / cols); const c = i % cols;
-          ox = (c - (Math.min(count, cols) - 1) / 2) * 24;
-          oy = r * -24; // Stack backwards
-        } else if (squad.formation === 'SPEARHEAD') {
-          const row = Math.floor(Math.sqrt(i));
-          const col = i - (row * row);
-          ox = (col - (row) / 2) * 26;
-          oy = row * -26;
-        } else { // GRID
-          const cols = Math.ceil(Math.sqrt(count));
-          const r = Math.floor(i / cols); const c = i % cols;
-          ox = (c - (Math.min(count, cols) - 1) / 2) * 24;
-          oy = r * -24;
+      if (state !== 'START') {
+        ctx.save(); ctx.translate(squad.drawX, trackProgress);
+        const count = Math.max(1, Math.ceil(squad.visualCount));
+        const { slots, hw } = formationLayout(count, squad.formation);
+        drawShadow(ctx, 0, 0, Math.max(40, hw + 10));
+        if (shieldCharges > 0) {
+          ctx.strokeStyle = 'rgba(250,204,21,0.7)'; ctx.lineWidth = 3;
+          ctx.beginPath(); ctx.ellipse(0, -10, hw + 22, (hw + 22) * 0.4, 0, 0, Math.PI * 2); ctx.stroke();
         }
-
-        const bob = Math.abs(Math.sin((trackProgress * 0.15) + i)) * 6;
-
-        // Player Voxel (White/Cyan uniform style for readability)
-        drawVoxel(ctx, ox, oy, bob, 14, 18, 14, '#e2e8f0'); // Body
-        drawVoxel(ctx, ox, oy, 18+bob, 12, 12, 12, '#38bdf8'); // Head / Helmet
-      }
-
-      // Visual Counter
-      ctx.save(); ctx.scale(1, -1);
-      ctx.fillStyle = '#0f172a'; ctx.beginPath(); ctx.roundRect(-30, 45, 60, 24, 12); ctx.fill();
-      ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 2; ctx.stroke();
-      ctx.fillStyle = '#fff'; ctx.font = '900 14px Arial Black'; ctx.textAlign = 'center'; ctx.fillText(`x${Math.round(squad.count)}`, 0, 62);
-      ctx.restore();
-      ctx.restore();
-
-      for (let p of entities.particles) { ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill(); }
-      for (let t of entities.texts) {
-        ctx.save(); ctx.translate(t.x, t.y); ctx.scale(1, -1);
-        ctx.fillStyle = t.color; ctx.strokeStyle = '#000'; ctx.lineWidth = 4;
-        ctx.font = '900 22px Arial Black'; ctx.textAlign = 'center'; ctx.strokeText(t.str, 0, 0); ctx.fillText(t.str, 0, 0);
+        slots.forEach(([ox, oy], i) => {
+          const bob = Math.abs(Math.sin((trackProgress * 0.15) + i)) * 6;
+          drawVoxel(ctx, ox, oy, bob, 14, 18, 14, '#e2e8f0');
+          drawVoxel(ctx, ox, oy, 18 + bob, 12, 12, 12, '#38bdf8');
+        });
+        ctx.save(); ctx.scale(1, -1);
+        const label = `x${Math.max(0, Math.ceil(squad.count))}`;
+        ctx.font = font(14); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        const lw = Math.max(60, ctx.measureText(label).width + 22);
+        let depth = 0; for (const s of slots) depth = Math.max(depth, -s[1]);
+        const py = depth + 26; // pill sits just behind the last row
+        ctx.fillStyle = '#0f172a'; ctx.beginPath(); ctx.roundRect(-lw / 2, py, lw, 24, 12); ctx.fill();
+        ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 2; ctx.stroke();
+        ctx.fillStyle = '#fff'; ctx.fillText(label, 0, py + 13);
+        ctx.restore();
         ctx.restore();
       }
 
+      for (const p of entities.particles) { ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill(); }
+      ctx.font = font(20); ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic'; ctx.lineWidth = 4; ctx.strokeStyle = '#000';
+      for (const t of entities.texts) {
+        ctx.save(); ctx.translate(t.x, t.y); ctx.scale(1, -1);
+        ctx.globalAlpha = Math.min(1, t.life * 3); ctx.fillStyle = t.color;
+        ctx.strokeText(t.str, 0, 0); ctx.fillText(t.str, 0, 0);
+        ctx.restore();
+      }
       ctx.restore(); ctx.restore();
     }
 
-    function victory() { state = 'VICTORY'; document.getElementById('endTitle').innerText = 'STAGE CLEAR!'; document.getElementById('endTitle').style.color = '#38bdf8'; document.getElementById('endDesc').innerText = `Aura Acquired: ✨ ${Math.round(aura)}`; document.getElementById('nextBtn').innerText = "NEXT ZONE"; document.getElementById('endModal').style.display = 'flex'; }
-    function gameOver() { state = 'GAMEOVER'; document.getElementById('endTitle').innerText = 'CRASHED OUT!'; document.getElementById('endTitle').style.color = '#ef4444'; document.getElementById('endDesc').innerText = 'Your squad was wiped out!'; document.getElementById('nextBtn').innerText = "RETRY"; document.getElementById('endModal').style.display = 'flex'; }
-    function nextLevel() { if (state === 'VICTORY') level++; initLevel(); }
-    
+    // ----- End of zone / run -----
+    function renderShop() {
+      const shop = $('shop');
+      shop.innerHTML = '<h2>SPEND AURA ON UPGRADES</h2>';
+      for (const k of Object.keys(UPGRADES)) {
+        const u = UPGRADES[k], lvl = upgrades[k], maxed = lvl >= u.max, cost = upgradeCost(k);
+        const b = document.createElement('button');
+        b.className = 'upg'; b.dataset.upg = k; b.disabled = maxed || aura < cost;
+        b.innerHTML = `<span class="ico">${u.ico}</span><span class="txt"><span class="nm">${u.name}</span><span class="ds">${u.desc}</span><span class="pips">${'■'.repeat(lvl)}${'□'.repeat(u.max - lvl)}</span></span><span class="cost">${maxed ? 'MAX' : '✨ ' + cost}</span>`;
+        b.onclick = () => buyUpgrade(k);
+        shop.appendChild(b);
+      }
+    }
+    function buyUpgrade(k) {
+      const cost = upgradeCost(k);
+      if (upgrades[k] >= UPGRADES[k].max || aura < cost) return;
+      aura -= cost; upgrades[k]++; updateAuraUI(); playSound('powerup');
+      $('endDesc').textContent = `Boss defeated! ✨ ${Math.round(aura)} aura to spend. ${Math.min(40, Math.round(squad.count * 0.5))} troopers carry over.`;
+      renderShop();
+    }
+    function victory() {
+      state = 'VICTORY'; recordBest();
+      $('endTitle').textContent = 'STAGE CLEAR!'; $('endTitle').style.color = '#38bdf8';
+      $('endDesc').textContent = `Boss defeated! ✨ ${Math.round(aura)} aura to spend. ${Math.min(40, Math.round(squad.count * 0.5))} troopers carry over.`;
+      $('endBest').textContent = bestText();
+      $('shop').style.display = 'flex'; renderShop();
+      $('nextBtn').textContent = 'NEXT ZONE'; $('nextBtn').className = 'btn';
+      $('bossUI').style.display = 'none'; $('endModal').style.display = 'flex';
+    }
+    function gameOver() {
+      state = 'GAMEOVER'; recordBest();
+      $('endTitle').textContent = 'CRASHED OUT!'; $('endTitle').style.color = '#ef4444';
+      $('endDesc').textContent = `Your squad was wiped out in Zone ${level}. Run aura: ✨ ${Math.round(aura)}.`;
+      $('endBest').textContent = bestText();
+      $('shop').style.display = 'none';
+      $('nextBtn').textContent = 'NEW RUN'; $('nextBtn').className = 'btn gold';
+      $('endModal').style.display = 'flex';
+    }
+    function nextLevel() {
+      if (state === 'VICTORY') { carrySquad = Math.min(40, Math.round(squad.count * 0.5)); level++; initLevel(); }
+      else if (state === 'GAMEOVER') newRun();
+    }
+
+    $('startBest').textContent = bestText();
+    updateMuteUI();
+    if (document.fonts && document.fonts.load) document.fonts.load(font(16)).catch(() => {});
     requestAnimationFrame(loop);
   </script>
 </body>

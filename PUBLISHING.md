@@ -13,8 +13,10 @@
 ## Current state
 - Native Android project (Capacitor 8). GitHub Actions (`.github/workflows/build-apk.yml`) builds a **debug APK** on
   push to `master`/`main` and on manual `workflow_dispatch`; the artifact is `BrainrotAuraRush-debug`.
-- The game (`www/index.html`) is a self-contained canvas game. It currently does **not** call any Capacitor plugins:
-  no ads, no haptics, no pause/back-button handling, no saved best score, no status-bar/splash handling.
+- The game (`www/index.html`) is a self-contained canvas game with no network calls. It uses `localStorage` only for
+  the best aura, best zone and mute setting (key `brainrot-aura-rush-v1`). It has its own pause/mute buttons and
+  pauses when the app is backgrounded. It does **not** call any Capacitor plugins yet: no ads, no haptics, no Android
+  back-button handling, no status-bar/splash handling. The wordmark font (`www/fonts/`, SIL OFL) is bundled.
 - `package.json` still depends on `@capacitor-community/admob`, `@capacitor/haptics`, `@capacitor/app`,
   `@capacitor/status-bar` and `@capacitor/splash-screen` (inherited from Aether Surge). Either wire them into the game
   or remove the unused ones before release — the AdMob SDK in particular affects the Data safety form.
@@ -27,12 +29,11 @@ All Brainrot art is generated from code by `tools/art/` (see `tools/art/README.m
 third-party characters:
 - Play icon: `store-assets/icon-512.png` (512x512, 32-bit PNG)
 - Feature graphic: `store-assets/feature-graphic-1024x500.png` (24-bit PNG, no alpha)
-- Phone screenshots: `store-assets/phone-1080x1920/` (7 real gameplay captures, 1080x1920)
+- Phone screenshots: `store-assets/phone-1080x1920/` (8 real gameplay captures, 1080x1920)
 - Launcher icons (`mipmap-*`, adaptive foreground/background) and all `drawable*/splash.png` are replaced, and so are
   the `assets/icon*` / `assets/splash*` sources. To change them, edit `tools/art/scenes.mjs` and run
   `cd tools/art && npm install && node generate.mjs`.
-- Re-shoot the screenshots after gameplay changes (`node capture-screenshots.mjs`). The current game freezes when the
-  boss fires its first laser, so there's no "STAGE CLEAR" shot yet.
+- Re-shoot the screenshots after gameplay changes (`node capture-screenshots.mjs`).
 
 ### 2. Signing key
 Create a **new upload keystore for this app** (don't reuse the Aether Surge key), e.g.:
