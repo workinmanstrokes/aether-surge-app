@@ -1,12 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
-<defs>
-<radialGradient id="bg" cx="50%" cy="42%" r="75%">
-<stop offset="0%" stop-color="#1a2350"/>
-<stop offset="55%" stop-color="#0e1330"/>
-<stop offset="100%" stop-color="#06060e"/>
-</radialGradient>
-</defs>
-<rect width="1024" height="1024" fill="url(#bg)"/>
-<circle cx="512" cy="512" r="360" fill="none" stroke="#3a5aaa" stroke-width="3" opacity="0.25"/>
-<circle cx="512" cy="512" r="440" fill="none" stroke="#3a5aaa" stroke-width="2" opacity="0.15"/>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024"><defs><radialGradient id="abg" cx="0.5" cy="0.38" r="0.85">
+    <stop offset="0" stop-color="#6d28d9"/><stop offset="0.35" stop-color="#3b0764"/>
+    <stop offset="0.75" stop-color="#1e1b4b"/><stop offset="1" stop-color="#020617"/></radialGradient></defs>
+    <rect width="1024" height="1024" fill="url(#abg)"/><g opacity="0.9"><polygon points="460.8,307.2 563.2,307.2 1146.88,1024 -122.88,1024" fill="#0f172a" opacity="0.55"/><line x1="443.22083104164267" y1="328.78845310675456" x2="580.7791689583573" y2="328.78845310675456" stroke="#38bdf8" stroke-opacity="0.12542120753238814" stroke-width="3.5235251783629096"/><line x1="399.58577824409724" y1="382.37536005110866" x2="624.4142217559028" y2="382.37536005110866" stroke="#38bdf8" stroke-opacity="0.13887774108426276" stroke-width="4.135946972012671"/><line x1="333.79623410329157" y1="463.1695370661331" x2="690.2037658967084" y2="463.1695370661331" stroke="#38bdf8" stroke-opacity="0.1591664574105803" stroke-width="5.059308995041522"/><line x1="247.63969907465997" y1="568.9758081539264" x2="776.36030092534" y2="568.9758081539264" stroke="#38bdf8" stroke-opacity="0.18573611253865338" stroke-width="6.2685235217591595"/><line x1="142.27439586571012" y1="698.3717945508823" x2="881.7256041342898" y2="698.3717945508823" stroke="#38bdf8" stroke-opacity="0.21822952430128184" stroke-width="7.7473347948672275"/><line x1="18.547200231565682" y1="850.3174733998317" x2="1005.4527997684343" y2="850.3174733998317" stroke="#38bdf8" stroke-opacity="0.2563855262443774" stroke-width="9.48385683885522"/><line x1="-122.88" y1="1024" x2="1146.88" y2="1024" stroke="#38bdf8" stroke-opacity="0.3" stroke-width="11.4688"/><polygon points="460.8,307.2 452.608,307.2 -158.72000000000003,1024 -122.88,1024" fill="#38bdf8"/><polygon points="563.2,307.2 571.392,307.2 1182.72,1024 1146.88,1024" fill="#38bdf8"/></g></svg>
