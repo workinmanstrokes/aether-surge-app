@@ -114,6 +114,8 @@
       <p id="pauseDesc">Take a breather.</p>
       <button class="btn gold" onclick="resumeGame()">RESUME</button>
       <button class="btn ghost" id="pauseMuteBtn" onclick="toggleMute()">SOUND: ON</button>
+      <button class="btn ghost" id="pauseVibeBtn" onclick="toggleVibe()">VIBRATION: ON</button>
+      <button class="btn ghost" onclick="quitToTitle()">END RUN</button>
     </div>
   </div>
 
@@ -123,6 +125,31 @@
     const $ = id => document.getElementById(id);
     const FONT = 'GameFont, "Arial Black", Impact, Roboto, Arial, sans-serif';
     const font = px => `${px}px ${FONT}`;
+
+    // Older Android System WebViews (Chrome < 99) lack roundRect; without it gate labels throw every frame.
+    if (!CanvasRenderingContext2D.prototype.roundRect) {
+      CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
+        r = Math.max(0, Math.min(typeof r === 'number' ? r : 0, w / 2, h / 2));
+        this.moveTo(x + r, y); this.arcTo(x + w, y, x + w, y + h, r); this.arcTo(x + w, y + h, x, y + h, r);
+        this.arcTo(x, y + h, x, y, r); this.arcTo(x, y, x + w, y, r); this.closePath();
+      };
+    }
+
+    // ----- Native (Capacitor) bridge: absent in a plain browser, so every call is optional -----
+    const Native = (window.Capacitor && window.Capacitor.Plugins) || {};
+    const isNative = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+    let lastBuzz = 0;
+    function buzz(kind) {
+      if (!save.vibe) return;
+      const now = performance.now(); if (now - lastBuzz < 90) return; lastBuzz = now;
+      try {
+        if (Native.Haptics) {
+          if (kind === 'heavy') Native.Haptics.impact({ style: 'HEAVY' });
+          else if (kind === 'success') Native.Haptics.notification({ type: 'SUCCESS' });
+          else Native.Haptics.impact({ style: 'LIGHT' });
+        } else if (navigator.vibrate) navigator.vibrate(kind === 'heavy' ? 40 : 15);
+      } catch (e) { /* haptics unavailable */ }
+    }
 
     // ----- Screen / scaling: canvas is backed at devicePixelRatio, world is scaled to fit the road -----
     const ROAD_HALF = 190;                 // half road width in world units
@@ -138,7 +165,7 @@
 
     // ----- Persistence -----
     const SAVE_KEY = 'brainrot-aura-rush-v1';
-    let save = { bestAura: 0, bestZone: 0, muted: false };
+    let save = { bestAura: 0, bestZone: 0, muted: false, vibe: true };
     try { save = Object.assign(save, JSON.parse(localStorage.getItem(SAVE_KEY) || '{}')); } catch (e) { /* storage unavailable */ }
     function persist() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) { /* ignore */ } }
     function recordBest() {
@@ -193,7 +220,9 @@
     function updateMuteUI() {
       $('muteBtn').textContent = save.muted ? '🔇' : '🔊';
       $('pauseMuteBtn').textContent = save.muted ? 'SOUND: OFF' : 'SOUND: ON';
+      $('pauseVibeBtn').textContent = save.vibe ? 'VIBRATION: ON' : 'VIBRATION: OFF';
     }
+    function toggleVibe() { save.vibe = !save.vibe; persist(); updateMuteUI(); buzz('light'); }
 
     // ----- Game state -----
     let state = 'START', pausedFrom = null;
@@ -225,26 +254,61 @@
     const bulletDamage = () => (10 + level * 2) * (1 + 0.2 * upgrades.dmg);
 
     // ----- Input -----
-    let dragging = false, dragStartX = 0, squadStartX = 0;
+    let dragging = false, dragStartX = 0, squadStartX = 0, lastTouch = 0;
+    const isGhostMouse = e => !e.touches && performance.now() - lastTouch < 800; // WebView fires emulated mouse events after taps
     function hideHint() { $('hint').style.display = 'none'; }
     function onPointerDown(e) {
+      if (e.touches) lastTouch = performance.now(); else if (isGhostMouse(e)) return;
       if (state !== 'PLAYING' && state !== 'BOSS') return;
       if (e.target && e.target.closest && e.target.closest('button')) return;
-      dragging = true; dragStartX = e.touches ? e.touches[0].clientX : e.clientX;
+      const t = e.touches ? e.touches[e.touches.length - 1] : e;
+      dragging = true; dragStartX = t.clientX;
       squadStartX = squad.targetX;
     }
     function onPointerMove(e) {
-      if (!dragging) return;
-      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      if (!dragging || isGhostMouse(e)) return;
+      const clientX = e.touches ? e.touches[e.touches.length - 1].clientX : e.clientX;
       const dx = (clientX - dragStartX) * 1.6 / VS;
       if (Math.abs(dx) > 4) hideHint();
       squad.targetX = Math.max(-150, Math.min(150, squadStartX + dx));
     }
-    function onPointerUp() { dragging = false; }
+    function onPointerUp(e) {
+      if (e && e.touches) {
+        lastTouch = performance.now();
+        // another finger is still down: keep steering with it from where the squad is now
+        if (e.touches.length > 0 && dragging) { dragStartX = e.touches[e.touches.length - 1].clientX; squadStartX = squad.targetX; return; }
+      } else if (e && isGhostMouse(e)) return;
+      dragging = false;
+    }
     window.addEventListener('mousedown', onPointerDown); window.addEventListener('mousemove', onPointerMove); window.addEventListener('mouseup', onPointerUp);
-    window.addEventListener('touchstart', onPointerDown, { passive: true }); window.addEventListener('touchmove', onPointerMove, { passive: true }); window.addEventListener('touchend', onPointerUp);
+    window.addEventListener('touchstart', onPointerDown, { passive: true }); window.addEventListener('touchmove', onPointerMove, { passive: true }); window.addEventListener('touchend', onPointerUp); window.addEventListener('touchcancel', onPointerUp);
     window.addEventListener('keydown', e => { if (e.key === 'Escape' || e.key === 'p') { state === 'PAUSED' ? resumeGame() : pauseGame(); } });
     document.addEventListener('visibilitychange', () => { if (document.hidden) { pauseGame(); recordBest(); } });
+
+    // Android back button: pause a run, resume from pause, close a menu, or leave the app from the title screen.
+    if (Native.App && isNative) {
+      try {
+        Native.App.addListener('backButton', () => {
+          if (state === 'PLAYING' || state === 'BOSS') pauseGame();
+          else if (state === 'PAUSED') resumeGame();
+          else if (state === 'VICTORY' || state === 'GAMEOVER') quitToTitle();
+          else Native.App.exitApp();
+        });
+        Native.App.addListener('pause', () => { pauseGame(); recordBest(); });
+      } catch (e) { /* plugin unavailable */ }
+    }
+    if (Native.StatusBar && isNative) { try { Native.StatusBar.hide(); } catch (e) { /* ignore */ } }
+
+    function quitToTitle() {
+      if (state === 'PLAYING' || state === 'BOSS' || state === 'PAUSED' || state === 'VICTORY') recordBest();
+      state = 'START'; pausedFrom = null; dragging = false; boss = null;
+      for (const key in entities) entities[key].length = 0;
+      ['pauseModal', 'endModal'].forEach(id => $(id).style.display = 'none');
+      $('ui').style.display = 'none'; $('bossUI').style.display = 'none';
+      $('damageOverlay').style.opacity = '0'; $('slowmoOverlay').style.opacity = '0'; damageFlash = 0; slowMoTimer = 0;
+      $('startBest').textContent = bestText(); $('startModal').style.display = 'flex';
+      if (actx && actx.state === 'running') actx.suspend();
+    }
 
     function pauseGame() {
       if (state !== 'PLAYING' && state !== 'BOSS') return;
@@ -365,7 +429,7 @@
         spawnExplosion(x, y, '#facc15', 18); playSound('powerup'); triggerShake(6);
         return false;
       }
-      squad.count -= n; hurtFlash(); triggerShake(15); playSound('damage');
+      squad.count -= n; hurtFlash(); triggerShake(15); playSound('damage'); buzz('heavy');
       if (squad.count <= 3 && !lastStandUsed && zoneTime > 3 && squad.count > 0) triggerLastStand();
       if (squad.count < 1) { gameOver(); return true; }
       return false;
@@ -464,7 +528,7 @@
         } else if (boss.state === 'TELEGRAPH') {
           if (boss.timer <= 0) {
             boss.state = 'STRIKE'; boss.timer = level >= 5 ? 0.95 : 0.8; boss.shielded = false;
-            playSound('laser'); triggerShake(15);
+            playSound('laser'); triggerShake(15); buzz('heavy');
           }
         } else if (boss.state === 'STRIKE') {
           if (boss.lanes.some(lx => Math.abs(squad.x - lx) < 60)) {
@@ -522,7 +586,7 @@
           if (Math.random() < 0.35) spawnExplosion(b.x, b.y, '#38bdf8', 1, 0.35);
           if (boss.hp <= 0) {
             boss.active = false; addAura(5000 + (level - 1) * 1000); playSound('powerup');
-            spawnExplosion(boss.x, boss.y, '#facc15', 60); triggerShake(20); victory(); return;
+            spawnExplosion(boss.x, boss.y, '#facc15', 60); triggerShake(20); buzz('success'); victory(); return;
           }
         }
         if (hit || b.life <= 0) { entities.bullets[i] = entities.bullets[entities.bullets.length - 1]; entities.bullets.pop(); }
@@ -544,7 +608,7 @@
             const badgeUI = $('tierBadge'); badgeUI.textContent = `FORMATION: ${chosen.val}`;
             badgeUI.classList.add('tier-pop'); setTimeout(() => badgeUI.classList.remove('tier-pop'), 200);
           } else if (chosen.type === 'AURA') addAura(chosen.val);
-          if (!chosen.isBad) playSound('powerup');
+          if (!chosen.isBad) { playSound('powerup'); buzz('light'); }
           const label = chosen.type === 'SQUAD' && !chosen.isBad ? `+${Math.round(chosen.val)} SQUAD` : chosen.text;
           addFloatText(squad.x, g.y, label, gateColor(chosen));
           spawnExplosion(chosen.x, g.y, gateColor(chosen), 30);
@@ -743,13 +807,15 @@
       $('shop').style.display = 'flex'; renderShop();
       $('nextBtn').textContent = 'NEXT ZONE'; $('nextBtn').className = 'btn';
       $('bossUI').style.display = 'none'; $('endModal').style.display = 'flex';
+      slowMoTimer = 0; $('slowmoOverlay').style.opacity = '0';
     }
     function gameOver() {
       state = 'GAMEOVER'; recordBest();
       $('endTitle').textContent = 'CRASHED OUT!'; $('endTitle').style.color = '#ef4444';
       $('endDesc').textContent = `Your squad was wiped out in Zone ${level}. Run aura: ✨ ${Math.round(aura)}.`;
       $('endBest').textContent = bestText();
-      $('shop').style.display = 'none';
+      $('shop').style.display = 'none'; $('bossUI').style.display = 'none';
+      slowMoTimer = 0; $('slowmoOverlay').style.opacity = '0';
       $('nextBtn').textContent = 'NEW RUN'; $('nextBtn').className = 'btn gold';
       $('endModal').style.display = 'flex';
     }
