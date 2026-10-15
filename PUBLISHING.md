@@ -14,13 +14,14 @@
 - Native Android project (Capacitor 8). GitHub Actions (`.github/workflows/build-apk.yml`) builds a **debug APK** on
   push to `master`/`main` and on manual `workflow_dispatch`; the artifact is `BrainrotAuraRush-debug`.
 - The game (`www/index.html`) is a self-contained canvas game with no network calls. It uses `localStorage` only for
-  the best aura, best zone and mute setting (key `brainrot-aura-rush-v1`). It has its own pause/mute buttons and
-  pauses when the app is backgrounded. It does **not** call any Capacitor plugins yet: no ads, no haptics, no Android
-  back-button handling, no status-bar/splash handling. The wordmark font (`www/fonts/`, SIL OFL) is bundled.
-- `package.json` still depends on `@capacitor-community/admob`, `@capacitor/haptics`, `@capacitor/app`,
-  `@capacitor/status-bar` and `@capacitor/splash-screen` (inherited from Aether Surge). Either wire them into the game
-  or remove the unused ones before release — the AdMob SDK in particular affects the Data safety form.
-- `AndroidManifest.xml` still contains **Google's test AdMob App ID** (`ca-app-pub-3940256099942544~3347511713`).
+  the best aura, best zone, sound and vibration settings (key `brainrot-aura-rush-v1`) and the Essence balance + permanent upgrade levels (key `as_meta`). It has its own pause/mute
+  buttons and pauses when the app is backgrounded. The wordmark font (`www/fonts/`, SIL OFL) is bundled.
+- Native plugins in use (via `window.Capacitor.Plugins`, all optional so the page still runs in a browser):
+  `@capacitor/app` (Android back button: pause / resume / back to title / exit), `@capacitor/haptics` (hits, laser,
+  good gates, boss kill; toggle in the pause menu), `@capacitor/status-bar` (hidden for full-screen play),
+  `@capacitor/splash-screen`.
+- **No ads, no analytics.** The AdMob plugin and Google's test AdMob App ID were removed. No native `.so` libraries
+  are bundled, so the build is fully 64-bit compatible.
 
 ## Before you publish — required steps
 
@@ -44,16 +45,14 @@ Then create `android/keystore.properties` (git-ignored) with `storeFile`, `store
 — `android/app/build.gradle` picks it up automatically. **Back the keystore and passwords up somewhere safe**; if you
 lose them you cannot update the app. Keystores and `keystore.properties` are git-ignored — keep it that way.
 
-### 3. Ads (only if you decide to monetize with AdMob)
-1. Create the app in AdMob, get the real App ID (`ca-app-pub-XXXXXXXXXXXXXXXX~YYYYYYYYYY`) and ad unit IDs.
-2. Replace the test App ID in `android/app/src/main/AndroidManifest.xml` (`com.google.android.gms.ads.APPLICATION_ID`).
-3. Add the AdMob calls to `www/index.html` (keep `isTesting:true` while testing).
-If you don't want ads, remove `@capacitor-community/admob` from `package.json` and the AdMob `<meta-data>` from the
-manifest, and update the privacy policy's Advertising section accordingly.
+### 3. Ads (optional, later)
+The game ships without ads. To monetize later: create the app in AdMob, then re-add `@capacitor-community/admob`,
+put the real App ID in `AndroidManifest.xml` (`com.google.android.gms.ads.APPLICATION_ID`), call the plugin from
+`www/index.html`, and update the privacy policy's Advertising section and the Play Data safety form.
 
-### 4. Finish and host the privacy policy
-`privacy-policy.html` still has TODOs: developer name, contact email, children's-audience statement, and whether the
-Advertising section applies. Host it publicly (e.g. GitHub Pages) and use the URL in Play Console.
+### 4. Host the privacy policy
+`privacy-policy.html` is complete (Diddlerrr, mscofield1588@gmail.com, ages 13+, no ads). Host it publicly
+(e.g. GitHub Pages) and use the URL in Play Console.
 
 ### 5. Build the release
 ```
@@ -68,9 +67,9 @@ Output: `android/app/build/outputs/bundle/release/app-release.aab`.
 2. Store listing: descriptions, screenshots, feature graphic, 512x512 icon.
 3. Content rating questionnaire.
 4. Target audience and content — must match the privacy policy's children's statement.
-5. Data safety form — declare what the final build collects (none by the game itself; AdMob data if ads are used).
+5. Data safety form — no data collected or shared.
 6. Privacy policy URL.
-7. Ads declaration (yes/no, depending on step 3).
+7. Ads declaration: No.
 8. Upload `app-release.aab` (start with Internal testing), then submit for review.
 
 ## Project layout
