@@ -50,6 +50,10 @@
     .upg .pips { font-size: 10px; color: #38bdf8; letter-spacing: 2px; font-family: sans-serif; }
     .upg .cost { font-size: 13px; color: #facc15; white-space: nowrap; }
 
+    #metaShop .card { max-height: 92vh; overflow-y: auto; touch-action: pan-y; }
+    #metaList { display: flex; flex-direction: column; gap: 8px; margin: 4px 0 14px; }
+    .essence { font-size: 14px; color: #c4b5fd; margin: -6px 0 14px; font-family: 'Roboto', Arial, sans-serif; font-weight: bold; }
+    .btn.violet { background: linear-gradient(180deg, #a78bfa 0%, #6d28d9 100%); border-color: #ddd6fe; color: #fff; box-shadow: 0 8px 20px rgba(139, 92, 246, 0.45); margin-top: 10px; font-size: 16px; padding: 11px 20px; }
     #hint { position: absolute; top: 58%; left: 50%; transform: translateX(-50%); color: #fff; font-size: 16px; letter-spacing: 2px; animation: pulse 1s infinite alternate; text-shadow: 0 2px 4px #000; white-space: nowrap; }
     @keyframes pulse { from { opacity: 0.55; } to { opacity: 1; } }
 
@@ -94,7 +98,9 @@
       <h1 style="color:#facc15; text-shadow:0 4px 0 #a16207;">TACTICAL RUSH</h1>
       <p>Pick the right gates to grow your squad.<br>Dodge the Gorilla King's red laser.<br>Spend aura on upgrades between zones!</p>
       <p class="best" id="startBest"></p>
+      <p class="essence" id="essenceP"></p>
       <button class="btn gold" onclick="startGame()">TAP TO START</button>
+      <button class="btn violet" id="metaBtn" onclick="openMetaShop()">⬡ UPGRADES</button>
     </div>
   </div>
 
@@ -105,6 +111,15 @@
       <p class="best" id="endBest"></p>
       <div id="shop"></div>
       <button class="btn" id="nextBtn" onclick="nextLevel()">CONTINUE</button>
+    </div>
+  </div>
+
+  <div id="metaShop" class="modal" style="display:none;">
+    <div class="card">
+      <h1>UPGRADES</h1>
+      <p class="essence" id="metaEssence" style="margin:0 0 12px"></p>
+      <div id="metaList"></div>
+      <button class="btn" onclick="closeMetaShop()">BACK</button>
     </div>
   </div>
 
@@ -175,6 +190,54 @@
     }
     const bestText = () => save.bestZone ? `BEST: ZONE ${save.bestZone} · ✨ ${save.bestAura}` : '';
 
+    // ----- Essence: permanent meta-progression (ported from 74ce0a6, adapted to this game) -----
+    // Runs earn Essence on a wipe-out or when you end a run; it buys permanent levels that apply to every new run.
+    const META_UPS = [
+      { id: 'hp',      n: 'Vigor',   d: '+2 starting troopers per level', i: '♥',  max: 10, base: 15, grow: 1.22 },
+      { id: 'dmg',     n: 'Power',   d: '+4% bullet damage per level',    i: '⚡', max: 10, base: 18, grow: 1.24 },
+      { id: 'spd',     n: 'Haste',   d: '+3% fire rate per level',        i: '💨', max: 8,  base: 14, grow: 1.22 },
+      { id: 'luck',    n: 'Greed',   d: '+8% aura earned per level',      i: '🧲', max: 8,  base: 12, grow: 1.2 },
+      { id: 'harvest', n: 'Harvest', d: '+10% Essence earned per level',  i: '🔮', max: 10, base: 20, grow: 1.26 },
+    ];
+    const META_KEY = 'as_meta';
+    let meta = { essence: 0, lv: {} };
+    try {
+      const m = JSON.parse(localStorage.getItem(META_KEY) || 'null');
+      if (m && typeof m === 'object') {
+        if (Number.isFinite(m.essence) && m.essence >= 0) meta.essence = Math.floor(m.essence);
+        if (m.lv && typeof m.lv === 'object') meta.lv = m.lv;
+      }
+    } catch (e) { /* storage unavailable */ }
+    META_UPS.forEach(u => { const v = meta.lv[u.id]; meta.lv[u.id] = Number.isFinite(v) ? Math.max(0, Math.min(u.max, Math.floor(v))) : 0; });
+    function saveMeta() { try { localStorage.setItem(META_KEY, JSON.stringify(meta)); } catch (e) { /* ignore */ } }
+    const metaCost = u => Math.floor(u.base * Math.pow(u.grow, meta.lv[u.id]));
+    function renderEssence() { $('essenceP').textContent = `◈ ${meta.essence.toLocaleString()} ESSENCE`; }
+    function awardEssence(n) {
+      n = Math.max(0, Math.floor(n * (1 + meta.lv.harvest * 0.1)));
+      if (n > 0) { meta.essence += n; saveMeta(); renderEssence(); }
+      return n;
+    }
+    function renderMetaShop() {
+      const list = $('metaList'); list.innerHTML = '';
+      for (const u of META_UPS) {
+        const lv = meta.lv[u.id], maxed = lv >= u.max, cost = metaCost(u);
+        const b = document.createElement('button');
+        b.className = 'upg'; b.dataset.meta = u.id; b.disabled = maxed || meta.essence < cost;
+        b.innerHTML = `<span class="ico">${u.i}</span><span class="txt"><span class="nm">${u.n.toUpperCase()} · LV ${lv}/${u.max}</span><span class="ds">${u.d}</span><span class="pips">${'■'.repeat(lv)}${'□'.repeat(u.max - lv)}</span></span><span class="cost">${maxed ? 'MAX' : '◈ ' + cost}</span>`;
+        b.onclick = () => buyMeta(u);
+        list.appendChild(b);
+      }
+      $('metaEssence').textContent = `◈ ${meta.essence.toLocaleString()} Essence available`;
+    }
+    function buyMeta(u) {
+      const cost = metaCost(u);
+      if (meta.lv[u.id] >= u.max || meta.essence < cost) return;
+      meta.essence -= cost; meta.lv[u.id]++; saveMeta();
+      playSound('powerup'); buzz('light'); renderMetaShop(); renderEssence();
+    }
+    function openMetaShop() { initAudio(); renderMetaShop(); $('startModal').style.display = 'none'; $('metaShop').style.display = 'flex'; }
+    function closeMetaShop() { $('metaShop').style.display = 'none'; renderEssence(); $('startModal').style.display = 'flex'; }
+
     // ----- Audio -----
     const AudioContext = window.AudioContext || window.webkitAudioContext;
     let actx, master, lastShootSound = 0;
@@ -226,6 +289,7 @@
 
     // ----- Game state -----
     let state = 'START', pausedFrom = null;
+    let runKills = 0, runAuraEarned = 0, runAwarded = true; // Essence inputs for the current run
     let level = 1, aura = 0, trackProgress = 0, trackLength = 6000, baseSpeed = 240, screenShake = 0;
     let timeScale = 1.0, slowMoTimer = 0, zoneTime = 0, lastStandUsed = false, damageFlash = 0;
     let shieldCharges = 0, carrySquad = 0, zoneAuraStart = 0;
@@ -251,7 +315,7 @@
     const swarmDamage = () => Math.max(2 + Math.floor((level - 1) / 2), Math.round(squad.count * (0.03 + 0.008 * level)));
     const enemyHpMul = () => Math.pow(1.22, level - 1);
     const bossHp = () => Math.round(2400 * Math.pow(1.5, level - 1));
-    const bulletDamage = () => (10 + level * 2) * (1 + 0.2 * upgrades.dmg);
+    const bulletDamage = () => (10 + level * 2) * (1 + 0.2 * upgrades.dmg) * (1 + 0.04 * meta.lv.dmg);
 
     // ----- Input -----
     let dragging = false, dragStartX = 0, squadStartX = 0, lastTouch = 0;
@@ -292,6 +356,7 @@
           if (state === 'PLAYING' || state === 'BOSS') pauseGame();
           else if (state === 'PAUSED') resumeGame();
           else if (state === 'VICTORY' || state === 'GAMEOVER') quitToTitle();
+          else if ($('metaShop').style.display === 'flex') closeMetaShop();
           else Native.App.exitApp();
         });
         Native.App.addListener('pause', () => { pauseGame(); recordBest(); });
@@ -300,13 +365,13 @@
     if (Native.StatusBar && isNative) { try { Native.StatusBar.hide(); } catch (e) { /* ignore */ } }
 
     function quitToTitle() {
-      if (state === 'PLAYING' || state === 'BOSS' || state === 'PAUSED' || state === 'VICTORY') recordBest();
+      if (state === 'PLAYING' || state === 'BOSS' || state === 'PAUSED' || state === 'VICTORY') { recordBest(); endRunEssence(); }
       state = 'START'; pausedFrom = null; dragging = false; boss = null;
       for (const key in entities) entities[key].length = 0;
       ['pauseModal', 'endModal'].forEach(id => $(id).style.display = 'none');
       $('ui').style.display = 'none'; $('bossUI').style.display = 'none';
       $('damageOverlay').style.opacity = '0'; $('slowmoOverlay').style.opacity = '0'; damageFlash = 0; slowMoTimer = 0;
-      $('startBest').textContent = bestText(); $('startModal').style.display = 'flex';
+      $('startBest').textContent = bestText(); renderEssence(); $('startModal').style.display = 'flex';
       if (actx && actx.state === 'running') actx.suspend();
     }
 
@@ -330,7 +395,7 @@
       newRun();
     }
     function newRun() {
-      level = 1; aura = 0; carrySquad = 0;
+      level = 1; aura = 0; carrySquad = 0; runKills = 0; runAuraEarned = 0; runAwarded = false;
       upgrades = { recruits: 0, rate: 0, dmg: 0, shield: 0 };
       initLevel();
     }
@@ -376,8 +441,8 @@
       state = 'PLAYING'; trackProgress = 0; zoneTime = 0;
       trackLength = 5000 + level * 1000; baseSpeed = 240 + level * 10;
       squad.x = 0; squad.targetX = 0; squad.drawX = 0; squad.formation = 'GRID'; squad.shootTimer = 0;
-      squad.fireRate = 4.5 * (1 + 0.15 * upgrades.rate);
-      squad.count = Math.max(8 + upgrades.recruits * 4, carrySquad); squad.visualCount = squad.count;
+      squad.fireRate = 4.5 * (1 + 0.15 * upgrades.rate) * (1 + 0.03 * meta.lv.spd);
+      squad.count = Math.max(8 + upgrades.recruits * 4 + meta.lv.hp * 2, carrySquad); squad.visualCount = squad.count;
       shieldCharges = upgrades.shield; lastStandUsed = false;
       timeScale = 1.0; slowMoTimer = 0; damageFlash = 0; zoneAuraStart = aura;
       for (const key in entities) entities[key].length = 0;
@@ -410,7 +475,13 @@
       baseSpeed = 80;
     }
 
-    function addAura(v) { aura = Math.max(0, aura + v); updateAuraUI(); }
+    function addAura(v) {
+      if (v > 0) { v = Math.round(v * (1 + 0.08 * meta.lv.luck)); runAuraEarned += v; }
+      aura = Math.max(0, aura + v); updateAuraUI();
+      return v;
+    }
+    const runEssence = () => Math.floor(runKills / 4 + level * 10 + runAuraEarned / 120);
+    function endRunEssence() { if (runAwarded) return 0; runAwarded = true; return awardEssence(runEssence()); }
     function updateAuraUI() { $('auraBadge').textContent = `✨ ${Math.round(aura)} AURA`; }
 
     function spawnExplosion(x, y, color, count = 12, size = 1) {
@@ -576,8 +647,8 @@
           if (Math.hypot(b.x - e.x, b.y - e.y) < 40) {
             e.hp -= b.dmg; e.hitTime = 0.1; hit = true; spawnExplosion(b.x, b.y, '#38bdf8', 2, 0.4);
             if (e.hp <= 0) {
-              e.active = false; addAura(e.aura); playSound('hit');
-              addFloatText(e.x, e.y, `+${e.aura}`, '#facc15'); spawnExplosion(e.x, e.y, '#facc15', 16);
+              e.active = false; runKills++; const got = addAura(e.aura); playSound('hit');
+              addFloatText(e.x, e.y, `+${got}`, '#facc15'); spawnExplosion(e.x, e.y, '#facc15', 16);
             }
           }
         }
@@ -810,9 +881,9 @@
       slowMoTimer = 0; $('slowmoOverlay').style.opacity = '0';
     }
     function gameOver() {
-      state = 'GAMEOVER'; recordBest();
+      state = 'GAMEOVER'; recordBest(); const gained = endRunEssence();
       $('endTitle').textContent = 'CRASHED OUT!'; $('endTitle').style.color = '#ef4444';
-      $('endDesc').textContent = `Your squad was wiped out in Zone ${level}. Run aura: ✨ ${Math.round(aura)}.`;
+      $('endDesc').textContent = `Your squad was wiped out in Zone ${level}. Run aura: ✨ ${Math.round(aura)}. Essence: ◈ +${gained} (spend it in UPGRADES).`;
       $('endBest').textContent = bestText();
       $('shop').style.display = 'none'; $('bossUI').style.display = 'none';
       slowMoTimer = 0; $('slowmoOverlay').style.opacity = '0';
@@ -825,6 +896,7 @@
     }
 
     $('startBest').textContent = bestText();
+    renderEssence();
     updateMuteUI();
     if (document.fonts && document.fonts.load) document.fonts.load(font(16)).catch(() => {});
     requestAnimationFrame(loop);

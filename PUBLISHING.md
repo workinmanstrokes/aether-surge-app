@@ -14,7 +14,7 @@
 - Native Android project (Capacitor 8). GitHub Actions (`.github/workflows/build-apk.yml`) builds a **debug APK** on
   push to `master`/`main` and on manual `workflow_dispatch`; the artifact is `BrainrotAuraRush-debug`.
 - The game (`www/index.html`) is a self-contained canvas game with no network calls. It uses `localStorage` only for
-  the best aura, best zone, sound and vibration settings (key `brainrot-aura-rush-v1`). It has its own pause/mute
+  the best aura, best zone, sound and vibration settings (key `brainrot-aura-rush-v1`) and the Essence balance + permanent upgrade levels (key `as_meta`). It has its own pause/mute
   buttons and pauses when the app is backgrounded. The wordmark font (`www/fonts/`, SIL OFL) is bundled.
 - Native plugins in use (via `window.Capacitor.Plugins`, all optional so the page still runs in a browser):
   `@capacitor/app` (Android back button: pause / resume / back to title / exit), `@capacitor/haptics` (hits, laser,
