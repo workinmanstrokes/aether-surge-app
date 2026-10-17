@@ -1,6 +1,7 @@
 node_modules/
 android/local.properties
 android/keystore.properties
+android/admob.properties
 android/app/release
 android/build/
 android/app/build/
