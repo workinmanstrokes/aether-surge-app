@@ -3,9 +3,9 @@
 All of the app art for **Brainrot: Tactical Aura Rush** is drawn from code here, with no stock or
 third-party images. The characters are the original "brainrot" cast in `www/js/sprites.js` (glossy toy-style hybrids drawn
 with canvas shapes, rendered once into an in-memory atlas at startup, so there are no sprite image files):
-Tostino Pingwhirl (toaster-penguin trooper), Flamenco Rotorina (flamingo-copter commander), Ananasso
-Spadino (pineapple knight), Lumacone Gelatoso (gelato-shell snail), Squalo Cingolone (shark tank) and
-Espressorilla, the Gorilla King (espresso-machine boss). Every character and shape is original.
+Lavatrino Schiumoso (washing-machine trooper), Nonno Scopazzo (broom-sweeping grease-monkey commander), Ananasso
+Spadino (pineapple knight), Cilindrino Bimbetto (top-hat kid), Lumacone Gelatoso (gelato-shell snail), Squalo Cingolone
+(shark tank) and Testone Baffolini, the Grump King (giant mustached blob-head boss). Every character and shape is original.
 
 ```bash
 cd tools/art

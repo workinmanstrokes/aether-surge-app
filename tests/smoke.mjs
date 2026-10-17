@@ -62,6 +62,7 @@ const at = await p.evaluate(() => { const a = Sprites.atlas(); return a && { w: 
 if (at && at.w <= 1400 && at.h <= 2048) pass(`sprite atlas ${at.w}x${at.h}`); else fail('sprite atlas ' + JSON.stringify(at));
 await p.evaluate(() => { level = 3; initLevel(); spawnBoss(); boss.state = 'TELEGRAPH'; }); await p.waitForTimeout(600);
 if (await p.evaluate(() => entities.enemies.some(e => e.skin === 'swarmB'))) pass('zone 3 spawns gelato snails'); else fail('no swarmB in zone 3');
+if (await p.evaluate(() => entities.enemies.some(e => e.skin === 'swarmC') && entities.enemies.some(e => e.skin === 'swarmA'))) pass('top-hat kids mixed with pineapple knights'); else fail('no swarmC/swarmA mix');
 const led = await p.evaluate(() => save.ads.count); if (led === 4) pass('ledger counted 4 rewarded ads'); else fail('ledger ' + led);
 await b.close();
 if (errs.length) fail('page errors: ' + errs.join(' | ')); else pass('no page errors');
