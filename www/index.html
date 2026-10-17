@@ -146,6 +146,7 @@
 
   <script src="js/config.js"></script>
   <script src="js/ads.js"></script>
+  <script src="js/sprites.js"></script>
   <script>
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d', { alpha: false });
@@ -445,7 +446,7 @@
       slots.forEach((x, i) => {
         if (i === gap) return;
         const hp = Math.round((20 + level * 6) * enemyHpMul());
-        entities.enemies.push({ x, baseX: x, y, phase, hp, maxHp: hp, type: 'SWARM', aura: 50, active: true, hitTime: 0 });
+        entities.enemies.push({ x, baseX: x, y, phase, hp, maxHp: hp, type: 'SWARM', aura: 50, active: true, hitTime: 0, skin: level >= 3 && phase > Math.PI ? 'swarmB' : 'swarmA' });
       });
     }
     function spawnTanks(y) {
@@ -754,6 +755,7 @@
       ctx.restore();
     }
 
+    const h0boss = () => Sprites.CAST.boss.h * 0.85 * 0.8 - 12; // boss feet below its anchor (shadow sits there)
     function render(rawDt) {
       // Zone atmosphere drawn on the canvas itself: blue -> industrial orange -> purple arena
       const pct = trackProgress / trackLength;
@@ -797,30 +799,28 @@
 
       for (const g of entities.gates) { if (!g.active) continue; drawGate(g.left, g.y); drawGate(g.right, g.y); }
 
-      for (const e of entities.enemies) {
-        if (!e.active) continue;
-        drawShadow(ctx, e.x, e.y, 40);
-        if (e.type === 'SWARM') {
-          drawVoxel(ctx, e.x, e.y, 0, 20, 24, 20, e.hitTime > 0 ? '#ffffff' : '#64748b');
-          drawVoxel(ctx, e.x, e.y + 4, 18, 12, 6, 12, '#38bdf8');
-        } else {
-          drawVoxel(ctx, e.x, e.y, 0, 32, 28, 32, e.hitTime > 0 ? '#ffffff' : '#b45309');
-          drawVoxel(ctx, e.x, e.y, 28, 16, 16, 16, '#ea580c');
-        }
-        ctx.save(); ctx.translate(e.x, e.y); ctx.scale(1, -1);
-        ctx.fillStyle = '#000'; ctx.fillRect(-20, -40, 40, 6);
-        ctx.fillStyle = '#ef4444'; ctx.fillRect(-20, -40, 40 * Math.max(0, e.hp / e.maxHp), 6);
-        ctx.restore();
+      // Characters are atlas sprites (js/sprites.js). They're drawn in an un-flipped pass, centred on the same anchor
+      // the hitboxes use, so gameplay and collisions are unchanged.
+      const anim = Math.floor(performance.now() / 160) & 1;
+      for (const e of entities.enemies) if (e.active) { const t = e.type === 'TANK'; drawShadow(ctx, e.x, e.y - (t ? 58 * 1.15 : 52 * 1.1) * 0.42 + 6, t ? 34 : 20); }
+      ctx.save(); ctx.scale(1, -1);
+      for (let i = entities.enemies.length - 1; i >= 0; i--) {   // far (higher y) first so nearer ones overlap
+        const e = entities.enemies[i]; if (!e.active) continue;
+        const key = e.type === 'TANK' ? 'tank' : (e.skin || 'swarmA'), sp = Sprites.CAST[key];
+        const sc = e.type === 'TANK' ? 1.15 : 1.1, h = sp.h * sc, footY = -e.y + h * 0.42;
+        Sprites.draw(ctx, key, e.hitTime > 0 ? 'hit' : (anim ^ (e.phase > Math.PI ? 1 : 0)), e.x, footY, sc);
+        const by = footY - h - 7;
+        ctx.fillStyle = '#000'; ctx.fillRect(e.x - 20, by, 40, 6);
+        ctx.fillStyle = '#ef4444'; ctx.fillRect(e.x - 20, by, 40 * Math.max(0, e.hp / e.maxHp), 6);
       }
+      ctx.restore();
 
       if (boss && boss.active) {
-        const flash = boss.hitTime > 0;
-        drawShadow(ctx, boss.x, boss.y, 100);
-        drawVoxel(ctx, boss.x, boss.y, 0, 80, 60, 60, flash ? '#cbd5e1' : '#334155');
-        drawVoxel(ctx, boss.x, boss.y, 60, 50, 45, 40, flash ? '#fde68a' : '#eab308');
-        const eyeColor = (boss.state === 'TELEGRAPH' || boss.state === 'STRIKE') ? '#ef4444' : '#000000';
-        drawVoxel(ctx, boss.x - 15, boss.y + 15, 80, 10, 10, 10, eyeColor);
-        drawVoxel(ctx, boss.x + 15, boss.y + 15, 80, 10, 10, 10, eyeColor);
+        drawShadow(ctx, boss.x, boss.y - h0boss(), 90);
+        const angry = boss.state === 'TELEGRAPH' || boss.state === 'STRIKE', sc = 0.85, h = Sprites.CAST.boss.h * sc;
+        ctx.save(); ctx.scale(1, -1);
+        Sprites.draw(ctx, 'boss', boss.hitTime > 0 ? 'hit' : angry ? 2 : (Math.floor(performance.now() / 420) & 1), boss.x, -boss.y + h * 0.8, sc);
+        ctx.restore();
       }
 
       ctx.lineWidth = 6; ctx.lineCap = 'round'; ctx.strokeStyle = '#38bdf8';
@@ -837,16 +837,19 @@
           ctx.strokeStyle = 'rgba(250,204,21,0.7)'; ctx.lineWidth = 3;
           ctx.beginPath(); ctx.ellipse(0, -10, hw + 22, (hw + 22) * 0.4, 0, 0, Math.PI * 2); ctx.stroke();
         }
-        slots.forEach(([ox, oy], i) => {
-          const bob = Math.abs(Math.sin((trackProgress * 0.15) + i)) * 6;
-          drawVoxel(ctx, ox, oy, bob, 14, 18, 14, '#e2e8f0');
-          drawVoxel(ctx, ox, oy, 18 + bob, 12, 12, 12, '#38bdf8');
-        });
         ctx.save(); ctx.scale(1, -1);
+        let depth = 0; for (const s of slots) depth = Math.max(depth, -s[1]);
+        // squad commander hovers beside the squad, off to the rear-left
+        const lh = Sprites.CAST.leader.h * 0.8, hover = Math.sin(performance.now() / 260) * 3;
+        Sprites.draw(ctx, 'leader', anim, -(hw + 22), depth * 0.5 + lh * 0.5 + hover, 0.8);
+        const th = Sprites.CAST.trooper.h * 0.82;
+        slots.forEach(([ox, oy], i) => {
+          const bob = Math.abs(Math.sin((trackProgress * 0.15) + i)) * 4;
+          Sprites.draw(ctx, 'trooper', (anim + i) & 1, ox, -oy + th * 0.45 - bob, 0.82);
+        });
         const label = `x${Math.max(0, Math.ceil(squad.count))}`;
         ctx.font = font(14); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
         const lw = Math.max(60, ctx.measureText(label).width + 22);
-        let depth = 0; for (const s of slots) depth = Math.max(depth, -s[1]);
         const py = depth + 26; // pill sits just behind the last row
         ctx.fillStyle = '#0f172a'; ctx.beginPath(); ctx.roundRect(-lw / 2, py, lw, 24, 12); ctx.fill();
         ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 2; ctx.stroke();
@@ -986,6 +989,7 @@
       else if (state === 'GAMEOVER') newRun();
     }
 
+    Sprites.build();
     $('startBest').textContent = bestText();
     renderEssence();
     updateMuteUI();

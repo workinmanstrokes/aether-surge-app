@@ -58,6 +58,10 @@ if (a1 > a0 && !(await p.$('#zone'))) pass(`bonus aura ${a0} -> ${a1}, capped at
 await p.click('#nextBtn'); await p.waitForTimeout(1500);
 if (await p.evaluate(() => state) === 'PLAYING' && await p.evaluate(() => level) === 2) pass('zone 2 runs'); else fail('zone 2');
 await p.screenshot({ path: process.env.SHOT || '/tmp/br-smoke.png' });
+const at = await p.evaluate(() => { const a = Sprites.atlas(); return a && { w: a.width, h: a.height }; });
+if (at && at.w <= 1400 && at.h <= 2048) pass(`sprite atlas ${at.w}x${at.h}`); else fail('sprite atlas ' + JSON.stringify(at));
+await p.evaluate(() => { level = 3; initLevel(); spawnBoss(); boss.state = 'TELEGRAPH'; }); await p.waitForTimeout(600);
+if (await p.evaluate(() => entities.enemies.some(e => e.skin === 'swarmB'))) pass('zone 3 spawns gelato snails'); else fail('no swarmB in zone 3');
 const led = await p.evaluate(() => save.ads.count); if (led === 4) pass('ledger counted 4 rewarded ads'); else fail('ledger ' + led);
 await b.close();
 if (errs.length) fail('page errors: ' + errs.join(' | ')); else pass('no page errors');

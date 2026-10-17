@@ -37,4 +37,11 @@ ok('release build uses real secrets', () => {
 });
 ok('release without secrets stays on TEST ids and warns', () => { const d = scratch(); const out = run(d, ['--release'], {}); assert.match(out, /MUST NOT SHIP/); assert.match(fs.readFileSync(path.join(d, 'www/js/config.js'), 'utf8'), /testing: true/); });
 ok('malformed ids are rejected', () => { const d = scratch(); assert.throws(() => run(d, ['--release'], { ...REAL, ADMOB_REWARDED_ID: 'oops' })); });
+// sprite cast (js/sprites.js): original names, all roles present, sane sizes
+const { CAST } = (() => { const g = {}; new Function('window', require('fs').readFileSync(path.join(root, 'www/js/sprites.js'), 'utf8'))(g); return g.Sprites; })();
+ok('cast has every gameplay role with unique original names', () => {
+  for (const k of ['trooper', 'leader', 'swarmA', 'swarmB', 'tank', 'boss']) { assert.ok(CAST[k], k); assert.ok(CAST[k].w > 0 && CAST[k].h > 0 && CAST[k].frames >= 2); }
+  const names = Object.values(CAST).map(c => c.name); assert.equal(new Set(names).size, names.length);
+  assert.ok(!names.some(nm => /bombardiro|crocodilo|cappuccina|tung|sahur|tralalero|tralala|lirili|larila|brr ?brr|patapim/i.test(nm)));
+});
 console.log(`\n${n} tests passed`);
