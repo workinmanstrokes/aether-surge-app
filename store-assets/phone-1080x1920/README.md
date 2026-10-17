@@ -14,3 +14,5 @@ Recaptured Oct 17, 2026 with the new brainrot cast (`www/js/sprites.js`):
 | 08-formation-gate | `--seed 900`, saved by the script as 02-choose-a-gate |
 
 Captioned Play versions (plus the new-cast icon and feature graphic) come from `tools/art/store-art.mjs`.
+
+`09-evolved.png` (the squad evolution, Legend stage) is captured by `node tools/art/capture-evolved.mjs --seed 700 --out store-assets/phone-1080x1920/09-evolved.png`. It replaces `04-wide-formation` in the store set.
