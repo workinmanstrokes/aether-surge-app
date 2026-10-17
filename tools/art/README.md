@@ -16,8 +16,11 @@ node cast-lineup.mjs /tmp/brainrot-cast.png                 # cast lineup with n
 node store-art.mjs --shots /tmp/shots --out store-assets/store   # new-cast icon, feature graphic, captioned shots
 ```
 
-Note: `generate.mjs` still draws the launcher icon/splash/old feature graphic from the voxel scenes in `scenes.mjs`;
-`store-art.mjs` makes the Play icon, feature graphic and captioned screenshots featuring the new cast.
+`node store-art.mjs --app --shots /tmp/shots --out store-assets/store` also regenerates every launcher icon (legacy
+rounded + round, adaptive foreground/background, ldpi-xxxhdpi), all splash screens (day/night, port/land), the
+`assets/` @capacitor/assets sources and `store-assets/feature-graphic.svg` from the new cast. The SVGs wrap the
+rendered PNG because the cast is drawn with canvas. `generate.mjs`/`scenes.mjs` are the old voxel art and are no
+longer used for app art (running them would put the voxel icons back).
 
 Set `CHROME_PATH` if Chrome isn't at `/usr/bin/google-chrome`. Use `node generate.mjs --preview DIR`
 to render a few samples without touching the repo.
