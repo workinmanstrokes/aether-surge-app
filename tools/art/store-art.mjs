@@ -65,7 +65,7 @@ const feat = await render(1024, 500, helpers + `
   S.draw(c, 'boss', 2, 870, 470, 1.55);
   S.draw(c, 'tank', 1, 690, 470, 2.6);
   S.draw(c, 'swarmB', 0, 455, 480, 2.4);
-  S.draw(c, 'leader', 0, 330, 450, 2.6);
+  S.draw(c, 'leader', 0, 340, 455, 2.15);
   [[90, 480], [175, 486], [255, 482], [130, 430], [215, 434]].forEach(([x, y], i) => S.draw(c, 'trooper', i & 1, x, y, 3.0));
   S.draw(c, 'swarmA', 1, 565, 482, 2.4);
   word('BRAINROT', 512, 112, 92, '#facc15', '#1a1033', 16);

@@ -16,7 +16,7 @@ await p.evaluate(async () => {
   await document.fonts.load('30px G');
   const c = document.getElementById('c').getContext('2d'), S = window.Sprites, cast = S.CAST;
   c.fillStyle = '#1a1033'; c.font = '44px G'; c.textAlign = 'center'; c.fillText('BRAINROT: TACTICAL AURA RUSH · THE CAST', 800, 70);
-  const order = [['trooper', 6.2], ['leader', 4.2], ['swarmA', 4.4], ['swarmB', 4.6], ['tank', 3.1], ['boss', 1.85]];
+  const order = [['trooper', 6.2], ['leader', 3.6], ['swarmA', 4.4], ['swarmB', 4.6], ['tank', 3.1], ['boss', 1.85]];
   const slotW = 1600 / order.length, base = 600;
   order.forEach(([k, s], i) => {
     const x = slotW * (i + 0.5);
