@@ -41,6 +41,10 @@ Create a **new upload keystore for this app** (don't reuse the Aether Surge key)
 ```
 keytool -genkeypair -v -keystore keystore/brainrot-upload.jks -alias brainrot -keyalg RSA -keysize 2048 -validity 10000
 ```
+**Done (Oct 17, 2026):** upload key `brainrotaurarush.jks` (alias `brainrotaurarush`, CN=Diddlerrr) was generated
+on Launchpad's build box; Michael keeps the backup zip. Upload cert SHA-256:
+`AF:C0:8C:B5:15:82:AF:B0:9C:6E:AD:7F:51:A7:12:56:8E:66:57:F1:3F:03:3E:FB:E1:DC:AC:DF:46:3E:72:36`.
+
 Then create `android/keystore.properties` (git-ignored) with `storeFile`, `storePassword`, `keyAlias`, `keyPassword`
 — `android/app/build.gradle` picks it up automatically. **Back the keystore and passwords up somewhere safe**; if you
 lose them you cannot update the app. Keystores and `keystore.properties` are git-ignored — keep it that way.
@@ -51,8 +55,9 @@ put the real App ID in `AndroidManifest.xml` (`com.google.android.gms.ads.APPLIC
 `www/index.html`, and update the privacy policy's Advertising section and the Play Data safety form.
 
 ### 4. Host the privacy policy
-`privacy-policy.html` is complete (Diddlerrr, mscofield1588@gmail.com, ages 13+, no ads). Host it publicly
-(e.g. GitHub Pages) and use the URL in Play Console.
+`privacy-policy.html` is complete (Diddlerrr, mscofield1588@gmail.com, ages 13+, no ads). It is hosted at
+https://workinmanstrokes.github.io/test-builds/privacy/brainrot-aura-rush.html: use that URL in Play Console.
+(The game has no in-app privacy link because it collects nothing; add one if ads or analytics are ever added.)
 
 ### 5. Build the release
 ```
