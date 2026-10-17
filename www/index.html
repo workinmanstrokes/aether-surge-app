@@ -54,6 +54,13 @@
     #metaList { display: flex; flex-direction: column; gap: 8px; margin: 4px 0 14px; }
     .essence { font-size: 14px; color: #c4b5fd; margin: -6px 0 14px; font-family: 'Roboto', Arial, sans-serif; font-weight: bold; }
     .btn.violet { background: linear-gradient(180deg, #a78bfa 0%, #6d28d9 100%); border-color: #ddd6fe; color: #fff; box-shadow: 0 8px 20px rgba(139, 92, 246, 0.45); margin-top: 10px; font-size: 16px; padding: 11px 20px; }
+    .btn.ad { background: linear-gradient(180deg, #4ade80 0%, #16a34a 100%); border-color: #bbf7d0; color: #052e16; box-shadow: 0 8px 20px rgba(74, 222, 128, 0.35); font-size: 15px; padding: 11px 16px; margin-bottom: 10px; }
+    .btn.ad:disabled { opacity: 0.5; }
+    .btn.chest { background: linear-gradient(180deg, #f472b6 0%, #be185d 100%); border-color: #fbcfe8; color: #fff; box-shadow: 0 8px 20px rgba(236, 72, 153, 0.4); margin-top: 10px; font-size: 16px; padding: 11px 20px; }
+    #chestBox p { margin: 10px 0 0; font-size: 13px; color: #f9a8d4; }
+    #chestBox .btn.ad { margin: 8px 0 0; }
+    .legal { margin-top: 14px; display: flex; justify-content: center; gap: 14px; align-items: center; font-family: 'Roboto', Arial, sans-serif; font-size: 12px; }
+    .legal a, .legal button { color: #94a3b8; background: none; border: none; text-decoration: underline; font: inherit; cursor: pointer; pointer-events: auto; }
     #hint { position: absolute; top: 58%; left: 50%; transform: translateX(-50%); color: #fff; font-size: 16px; letter-spacing: 2px; animation: pulse 1s infinite alternate; text-shadow: 0 2px 4px #000; white-space: nowrap; }
     @keyframes pulse { from { opacity: 0.55; } to { opacity: 1; } }
 
@@ -101,6 +108,8 @@
       <p class="essence" id="essenceP"></p>
       <button class="btn gold" onclick="startGame()">TAP TO START</button>
       <button class="btn violet" id="metaBtn" onclick="openMetaShop()">⬡ UPGRADES</button>
+      <div id="chestBox"></div>
+      <div class="legal"><a id="privacyLink" href="#" target="_blank" rel="noopener">Privacy policy</a><button id="privOptBtn" style="display:none" onclick="BRAds.showPrivacyOptions()">Privacy options</button></div>
     </div>
   </div>
 
@@ -110,6 +119,7 @@
       <p id="endDesc">Boss Defeated!</p>
       <p class="best" id="endBest"></p>
       <div id="shop"></div>
+      <div id="adOffers"></div>
       <button class="btn" id="nextBtn" onclick="nextLevel()">CONTINUE</button>
     </div>
   </div>
@@ -134,6 +144,8 @@
     </div>
   </div>
 
+  <script src="js/config.js"></script>
+  <script src="js/ads.js"></script>
   <script>
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d', { alpha: false });
@@ -180,8 +192,9 @@
 
     // ----- Persistence -----
     const SAVE_KEY = 'brainrot-aura-rush-v1';
-    let save = { bestAura: 0, bestZone: 0, muted: false, vibe: true };
+    let save = { bestAura: 0, bestZone: 0, muted: false, vibe: true, ads: { day: '', count: 0, chest: 0 }, chestDay: '', chestAmt: 0 };
     try { save = Object.assign(save, JSON.parse(localStorage.getItem(SAVE_KEY) || '{}')); } catch (e) { /* storage unavailable */ }
+    if (!save.ads || typeof save.ads !== 'object') save.ads = { day: '', count: 0, chest: 0 };
     function persist() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) { /* ignore */ } }
     function recordBest() {
       save.bestAura = Math.max(save.bestAura, Math.round(aura));
@@ -293,6 +306,8 @@
     let level = 1, aura = 0, trackProgress = 0, trackLength = 6000, baseSpeed = 240, screenShake = 0;
     let timeScale = 1.0, slowMoTimer = 0, zoneTime = 0, lastStandUsed = false, damageFlash = 0;
     let shieldCharges = 0, carrySquad = 0, zoneAuraStart = 0;
+    // Rewarded-ad caps: one revive per run, one Essence double per run end, one aura bonus per zone clear.
+    let runRevived = false, runDoubled = false, zoneBonusUsed = false, deathState = 'PLAYING', lastGained = 0;
     const ZONE_COLORS = { train: [19, 33, 66], industrial: [74, 29, 10], arena: [59, 7, 100] };
     let bgColor = ZONE_COLORS.train.slice();
 
@@ -368,10 +383,10 @@
       if (state === 'PLAYING' || state === 'BOSS' || state === 'PAUSED' || state === 'VICTORY') { recordBest(); endRunEssence(); }
       state = 'START'; pausedFrom = null; dragging = false; boss = null;
       for (const key in entities) entities[key].length = 0;
-      ['pauseModal', 'endModal'].forEach(id => $(id).style.display = 'none');
+      ['pauseModal', 'endModal'].forEach(id => $(id).style.display = 'none'); $('adOffers').innerHTML = '';
       $('ui').style.display = 'none'; $('bossUI').style.display = 'none';
       $('damageOverlay').style.opacity = '0'; $('slowmoOverlay').style.opacity = '0'; damageFlash = 0; slowMoTimer = 0;
-      $('startBest').textContent = bestText(); renderEssence(); $('startModal').style.display = 'flex';
+      $('startBest').textContent = bestText(); renderEssence(); renderChest(); $('startModal').style.display = 'flex';
       if (actx && actx.state === 'running') actx.suspend();
     }
 
@@ -396,6 +411,7 @@
     }
     function newRun() {
       level = 1; aura = 0; carrySquad = 0; runKills = 0; runAuraEarned = 0; runAwarded = false;
+      runRevived = false; runDoubled = false;
       upgrades = { recruits: 0, rate: 0, dmg: 0, shield: 0 };
       initLevel();
     }
@@ -443,7 +459,7 @@
       squad.x = 0; squad.targetX = 0; squad.drawX = 0; squad.formation = 'GRID'; squad.shootTimer = 0;
       squad.fireRate = 4.5 * (1 + 0.15 * upgrades.rate) * (1 + 0.03 * meta.lv.spd);
       squad.count = Math.max(8 + upgrades.recruits * 4 + meta.lv.hp * 2, carrySquad); squad.visualCount = squad.count;
-      shieldCharges = upgrades.shield; lastStandUsed = false;
+      shieldCharges = upgrades.shield; lastStandUsed = false; zoneBonusUsed = false;
       timeScale = 1.0; slowMoTimer = 0; damageFlash = 0; zoneAuraStart = aura;
       for (const key in entities) entities[key].length = 0;
       boss = null; $('bossUI').style.display = 'none'; $('endModal').style.display = 'none';
@@ -877,19 +893,94 @@
       $('endBest').textContent = bestText();
       $('shop').style.display = 'flex'; renderShop();
       $('nextBtn').textContent = 'NEXT ZONE'; $('nextBtn').className = 'btn';
+      renderAdOffers();
       $('bossUI').style.display = 'none'; $('endModal').style.display = 'flex';
       slowMoTimer = 0; $('slowmoOverlay').style.opacity = '0';
     }
     function gameOver() {
-      state = 'GAMEOVER'; recordBest(); const gained = endRunEssence();
+      deathState = state === 'BOSS' ? 'BOSS' : 'PLAYING';
+      state = 'GAMEOVER'; recordBest(); const gained = endRunEssence(); lastGained = gained;
       $('endTitle').textContent = 'CRASHED OUT!'; $('endTitle').style.color = '#ef4444';
-      $('endDesc').textContent = `Your squad was wiped out in Zone ${level}. Run aura: ✨ ${Math.round(aura)}. Essence: ◈ +${gained} (spend it in UPGRADES).`;
+      setGameOverText();
+      renderAdOffers();
       $('endBest').textContent = bestText();
       $('shop').style.display = 'none'; $('bossUI').style.display = 'none';
       slowMoTimer = 0; $('slowmoOverlay').style.opacity = '0';
       $('nextBtn').textContent = 'NEW RUN'; $('nextBtn').className = 'btn gold';
       $('endModal').style.display = 'flex';
     }
+    function setGameOverText() {
+      $('endDesc').textContent = `Your squad was wiped out in Zone ${level}. Run aura: ✨ ${Math.round(aura)}. Essence: ◈ +${lastGained * (runDoubled ? 2 : 1)}${runDoubled ? ' (doubled!)' : ''} (spend it in UPGRADES).`;
+    }
+
+    // ----- Opt-in rewarded ads (Android only; see js/ads.js). Every offer is a button the player may ignore. -----
+    const reviveCount = () => Math.max(12, Math.round((8 + upgrades.recruits * 4 + meta.lv.hp * 2) * 0.75));
+    const zoneBonus = () => Math.max(250, Math.round(Math.max(0, aura - zoneAuraStart) * 0.5));
+    function adButton(id, label, onTap) {
+      const b = document.createElement('button'); b.className = 'btn ad'; b.id = id; b.textContent = '▶ ' + label;
+      b.onclick = async () => {
+        document.querySelectorAll('.btn.ad').forEach(x => x.disabled = true);
+        const ok = await BRAds.show(save.ads, id === 'adChest' ? 'chest' : id); persist();
+        if (ok) { playSound('powerup'); buzz('success'); onTap(); }
+        renderAdOffers(); renderChest();
+      };
+      return b;
+    }
+    function renderAdOffers() {
+      const box = $('adOffers'); if (!box) return; box.innerHTML = '';
+      if (state === 'GAMEOVER') {
+        if (!runRevived && !runDoubled && BRAds.canOffer(save.ads, 'revive')) box.appendChild(adButton('revive', `REVIVE (+${reviveCount()} TROOPERS)`, reviveRun));
+        if (!runDoubled && lastGained > 0 && BRAds.canOffer(save.ads, 'double')) box.appendChild(adButton('double', `DOUBLE ESSENCE (+${lastGained})`, doubleEssence));
+      } else if (state === 'VICTORY') {
+        if (!zoneBonusUsed && BRAds.canOffer(save.ads, 'zone')) box.appendChild(adButton('zone', `BONUS AURA (+${zoneBonus()})`, () => {
+          zoneBonusUsed = true; aura += zoneBonus(); updateAuraUI();
+          $('endDesc').textContent = `Boss defeated! ✨ ${Math.round(aura)} aura to spend. ${Math.min(40, Math.round(squad.count * 0.5))} troopers carry over.`;
+          renderShop();
+        }));
+      }
+    }
+    function reviveRun() {
+      if (state !== 'GAMEOVER' || runRevived) return;
+      runRevived = true;
+      // undo this wipe-out's Essence; the run continues and pays out when it really ends
+      meta.essence = Math.max(0, meta.essence - lastGained); lastGained = 0; runAwarded = false; saveMeta(); renderEssence();
+      squad.count = reviveCount(); squad.visualCount = squad.count; shieldCharges = Math.max(shieldCharges, 1); lastStandUsed = false;
+      for (const e of entities.enemies) if (e.y > trackProgress - 100 && e.y < trackProgress + 700) e.active = false;
+      if (boss && boss.active) { boss.state = 'IDLE'; boss.timer = 2.5; boss.lanes = []; $('bossUI').style.display = 'flex'; }
+      addFloatText(squad.x, trackProgress + 100, 'REVIVED!', '#4ade80');
+      $('endModal').style.display = 'none'; $('adOffers').innerHTML = '';
+      state = deathState; lastTime = performance.now(); if (actx) actx.resume();
+    }
+    function doubleEssence() {
+      if (state !== 'GAMEOVER' || runDoubled || lastGained <= 0) return;
+      runDoubled = true; meta.essence += lastGained; saveMeta(); renderEssence(); setGameOverText();
+    }
+
+    // Daily chest: free Essence once a day; one optional ad reroll per day keeps the better roll.
+    const chestRoll = () => 10 + Math.floor(Math.random() * 21) + 3 * Math.min(save.bestZone || 0, 20);
+    function openChest() {
+      const today = BRAds.dayKey(); if (save.chestDay === today) return;
+      const n = chestRoll(); save.chestDay = today; save.chestAmt = n; persist();
+      meta.essence += n; saveMeta(); renderEssence(); playSound('powerup'); buzz('success'); renderChest();
+    }
+    function rerollChest() {
+      const n = chestRoll(), gain = Math.max(0, n - save.chestAmt);
+      save.chestAmt = Math.max(save.chestAmt, n); persist();
+      if (gain > 0) { meta.essence += gain; saveMeta(); renderEssence(); }
+      $('chestBox').dataset.reroll = gain > 0 ? `Rerolled: ◈ ${n}! +${gain} more Essence` : `Rerolled: ◈ ${n}. You kept your ◈ ${save.chestAmt}`;
+    }
+    function renderChest() {
+      const box = $('chestBox'); if (!box) return; box.innerHTML = '';
+      const today = BRAds.dayKey();
+      if (save.chestDay !== today) {
+        const b = document.createElement('button'); b.className = 'btn chest'; b.id = 'chestBtn'; b.textContent = '🎁 DAILY CHEST'; b.onclick = () => { initAudio(); openChest(); };
+        box.appendChild(b); return;
+      }
+      const p = document.createElement('p'); p.textContent = box.dataset.reroll || `🎁 Today's chest: ◈ ${save.chestAmt} Essence. New chest tomorrow.`; box.appendChild(p);
+      if (BRAds.canOffer(save.ads, 'chest')) box.appendChild(adButton('adChest', 'REROLL CHEST (KEEP BEST)', rerollChest));
+    }
+    window.onAdsReady = () => { renderChest(); renderAdOffers(); $('privOptBtn').style.display = BRAds.privacyRequired() ? '' : 'none'; };
+
     function nextLevel() {
       if (state === 'VICTORY') { carrySquad = Math.min(40, Math.round(squad.count * 0.5)); level++; initLevel(); }
       else if (state === 'GAMEOVER') newRun();
@@ -898,6 +989,9 @@
     $('startBest').textContent = bestText();
     renderEssence();
     updateMuteUI();
+    $('privacyLink').href = (window.BR_CONFIG && BR_CONFIG.PRIVACY_URL) || 'privacy-policy.html';
+    renderChest();
+    BRAds.init();
     if (document.fonts && document.fonts.load) document.fonts.load(font(16)).catch(() => {});
     requestAnimationFrame(loop);
   </script>
