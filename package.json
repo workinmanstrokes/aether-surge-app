@@ -6,7 +6,8 @@
   "scripts": {
     "test": "node tests/unit.js",
     "configure": "node scripts/configure.mjs",
-    "smoke": "node tests/smoke.mjs"
+    "smoke": "node tests/smoke.mjs",
+    "portal:build": "node scripts/build-portal.mjs all --zip /workspace/out"
   },
   "keywords": [],
   "author": "",

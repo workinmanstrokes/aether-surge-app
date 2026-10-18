@@ -133,6 +133,15 @@
     </div>
   </div>
 
+  <div id="gateModal" class="modal" style="display:none;">
+    <div class="card" style="border-color:#facc15">
+      <h1 style="color:#facc15;text-shadow:0 4px 0 #a16207">BOSS GATE AHEAD</h1>
+      <p id="gateDesc">The Grump King is waiting.</p>
+      <div id="gateOffer"></div>
+      <button class="btn gold" id="gateFight" onclick="enterBoss()">FIGHT NOW</button>
+    </div>
+  </div>
+
   <div id="pauseModal" class="modal" style="display:none;">
     <div class="card">
       <h1>PAUSED</h1>
@@ -145,6 +154,7 @@
   </div>
 
   <script src="js/config.js"></script>
+  <script src="js/portal.js"></script>
   <script src="js/ads.js"></script>
   <script src="js/sprites.js"></script>
   <script>
@@ -363,7 +373,20 @@
     }
     window.addEventListener('mousedown', onPointerDown); window.addEventListener('mousemove', onPointerMove); window.addEventListener('mouseup', onPointerUp);
     window.addEventListener('touchstart', onPointerDown, { passive: true }); window.addEventListener('touchmove', onPointerMove, { passive: true }); window.addEventListener('touchend', onPointerUp); window.addEventListener('touchcancel', onPointerUp);
-    window.addEventListener('keydown', e => { if (e.key === 'Escape' || e.key === 'p') { state === 'PAUSED' ? resumeGame() : pauseGame(); } });
+    // Keyboard (web/portals): ←/→ or A/D steer, Esc/P pause, Enter/Space start or continue.
+    const keys = { l: false, r: false };
+    const keyDir = k => (k === 'ArrowLeft' || k === 'a' || k === 'A') ? 'l' : (k === 'ArrowRight' || k === 'd' || k === 'D') ? 'r' : null;
+    window.addEventListener('keydown', e => {
+      if (e.key === 'Escape' || e.key === 'p') { state === 'PAUSED' ? resumeGame() : pauseGame(); return; }
+      const d = keyDir(e.key); if (d) { keys[d] = true; e.preventDefault(); return; }
+      if ((e.key === 'Enter' || e.key === ' ') && !e.repeat && !(e.target && e.target.closest && e.target.closest('button'))) {
+        if (state === 'START' && $('startModal').style.display !== 'none' && $('metaShop').style.display === 'none') { e.preventDefault(); startGame(); }
+        else if (state === 'GATE') { e.preventDefault(); enterBoss(); }
+        else if (state === 'VICTORY' || state === 'GAMEOVER') { e.preventDefault(); nextLevel(); }
+      }
+    });
+    window.addEventListener('keyup', e => { const d = keyDir(e.key); if (d) keys[d] = false; });
+    window.addEventListener('blur', () => { keys.l = keys.r = false; });
     document.addEventListener('visibilitychange', () => { if (document.hidden) { pauseGame(); recordBest(); } });
 
     // Android back button: pause a run, resume from pause, close a menu, or leave the app from the title screen.
@@ -382,10 +405,10 @@
     if (Native.StatusBar && isNative) { try { Native.StatusBar.hide(); } catch (e) { /* ignore */ } }
 
     function quitToTitle() {
-      if (state === 'PLAYING' || state === 'BOSS' || state === 'PAUSED' || state === 'VICTORY') { recordBest(); endRunEssence(); }
+      if (state === 'PLAYING' || state === 'BOSS' || state === 'PAUSED' || state === 'VICTORY' || state === 'GATE') { recordBest(); endRunEssence(); }
       state = 'START'; pausedFrom = null; dragging = false; boss = null;
       for (const key in entities) entities[key].length = 0;
-      ['pauseModal', 'endModal'].forEach(id => $(id).style.display = 'none'); $('adOffers').innerHTML = '';
+      ['pauseModal', 'endModal', 'gateModal'].forEach(id => $(id).style.display = 'none'); Portal.gameplayStop(); $('adOffers').innerHTML = '';
       $('ui').style.display = 'none'; $('bossUI').style.display = 'none';
       $('damageOverlay').style.opacity = '0'; $('slowmoOverlay').style.opacity = '0'; damageFlash = 0; slowMoTimer = 0;
       $('startBest').textContent = bestText(); renderEssence(); renderChest(); $('startModal').style.display = 'flex';
@@ -394,14 +417,14 @@
 
     function pauseGame() {
       if (state !== 'PLAYING' && state !== 'BOSS') return;
-      pausedFrom = state; state = 'PAUSED'; dragging = false;
+      pausedFrom = state; state = 'PAUSED'; dragging = false; Portal.gameplayStop();
       $('pauseDesc').textContent = `Zone ${level} · ✨ ${Math.round(aura)} aura`;
       $('pauseModal').style.display = 'flex';
       if (actx && actx.state === 'running') actx.suspend();
     }
     function resumeGame() {
       if (state !== 'PAUSED') return;
-      state = pausedFrom; $('pauseModal').style.display = 'none';
+      state = pausedFrom; $('pauseModal').style.display = 'none'; Portal.gameplayStart();
       lastTime = performance.now();
       if (actx) actx.resume();
     }
@@ -409,7 +432,7 @@
     // ----- Run / zone flow -----
     function startGame() {
       initAudio(); $('startModal').style.display = 'none'; $('ui').style.display = 'block';
-      newRun();
+      newRun(); Portal.gameplayStart();
     }
     function newRun() {
       level = 1; aura = 0; carrySquad = 0; runKills = 0; runAuraEarned = 0; runAwarded = false; troopStage = 0; evolveFlash = 0;
@@ -461,7 +484,7 @@
       squad.x = 0; squad.targetX = 0; squad.drawX = 0; squad.formation = 'GRID'; squad.shootTimer = 0;
       squad.fireRate = 4.5 * (1 + 0.15 * upgrades.rate) * (1 + 0.03 * meta.lv.spd);
       squad.count = Math.max(8 + upgrades.recruits * 4 + meta.lv.hp * 2, carrySquad); squad.visualCount = squad.count;
-      shieldCharges = upgrades.shield; lastStandUsed = false; zoneBonusUsed = false;
+      shieldCharges = upgrades.shield; lastStandUsed = false; zoneBonusUsed = false; squadOfferShown = false;
       timeScale = 1.0; slowMoTimer = 0; damageFlash = 0; zoneAuraStart = aura;
       for (const key in entities) entities[key].length = 0;
       boss = null; $('bossUI').style.display = 'none'; $('endModal').style.display = 'none';
@@ -577,12 +600,13 @@
 
     function update(dt, rawDt) {
       trackProgress += baseSpeed * dt; zoneTime += dt;
+      if (keys.l !== keys.r && !dragging) { squad.targetX = Math.max(-150, Math.min(150, squad.targetX + (keys.r ? 1 : -1) * 340 * rawDt)); hideHint(); }
       if (zoneTime > 4 && $('hint').style.display !== 'none') hideHint();
       const pct = trackProgress / trackLength;
 
       if (state === 'PLAYING') {
         $('progressBar').style.width = `${Math.min(100, pct * 100)}%`;
-        if (trackProgress > trackLength) spawnBoss();
+        if (trackProgress > trackLength) { if (!offerDoubleSquad()) spawnBoss(); }
       }
 
       squad.x += (squad.targetX - squad.x) * Math.min(1, 12 * dt);
@@ -903,7 +927,7 @@
       renderShop();
     }
     function victory() {
-      state = 'VICTORY'; recordBest();
+      state = 'VICTORY'; recordBest(); Portal.gameplayStop();
       $('endTitle').textContent = 'STAGE CLEAR!'; $('endTitle').style.color = '#38bdf8';
       $('endDesc').textContent = `Boss defeated! ✨ ${Math.round(aura)} aura to spend. ${Math.min(40, Math.round(squad.count * 0.5))} troopers carry over.`;
       $('endBest').textContent = bestText();
@@ -915,7 +939,7 @@
     }
     function gameOver() {
       deathState = state === 'BOSS' ? 'BOSS' : 'PLAYING';
-      state = 'GAMEOVER'; recordBest(); const gained = endRunEssence(); lastGained = gained;
+      state = 'GAMEOVER'; recordBest(); const gained = endRunEssence(); lastGained = gained; Portal.gameplayStop();
       $('endTitle').textContent = 'CRASHED OUT!'; $('endTitle').style.color = '#ef4444';
       setGameOverText();
       renderAdOffers();
@@ -930,6 +954,27 @@
     }
 
     // ----- Opt-in rewarded ads (Android only; see js/ads.js). Every offer is a button the player may ignore. -----
+    // Boss gate: optional "double your squad" right before the boss (once per zone, squadDailyCap per day).
+    // The run is frozen behind a two-button choice; FIGHT NOW is always there and is the default.
+    let squadOfferShown = false;
+    const squadBonus = () => Math.min(60, Math.max(1, Math.ceil(squad.count)));
+    function offerDoubleSquad() {
+      if (squadOfferShown || squad.count < 1 || !BRAds.canOffer(save.ads, 'squad')) return false;
+      squadOfferShown = true; state = 'GATE'; dragging = false; Portal.gameplayStop();
+      $('gateDesc').textContent = `The Grump King is waiting. Your squad: x${Math.ceil(squad.count)}.`;
+      const box = $('gateOffer'); box.innerHTML = '';
+      box.appendChild(adButton('squad', `DOUBLE SQUAD → x${Math.ceil(squad.count) + squadBonus()}`, () => {
+        const add = squadBonus(); squad.count += add; addFloatText(squad.x, trackProgress + 100, `SQUAD x2! +${add}`, '#4ade80');
+        enterBoss();
+      }));
+      $('gateModal').style.display = 'flex';
+      return true;
+    }
+    function enterBoss() {
+      if (state !== 'GATE') return;
+      $('gateModal').style.display = 'none'; $('gateOffer').innerHTML = '';
+      spawnBoss(); lastTime = performance.now(); Portal.gameplayStart();
+    }
     const reviveCount = () => Math.max(12, Math.round((8 + upgrades.recruits * 4 + meta.lv.hp * 2) * 0.75));
     const zoneBonus = () => Math.max(250, Math.round(Math.max(0, aura - zoneAuraStart) * 0.5));
     function adButton(id, label, onTap) {
@@ -965,7 +1010,7 @@
       if (boss && boss.active) { boss.state = 'IDLE'; boss.timer = 2.5; boss.lanes = []; $('bossUI').style.display = 'flex'; }
       addFloatText(squad.x, trackProgress + 100, 'REVIVED!', '#4ade80');
       $('endModal').style.display = 'none'; $('adOffers').innerHTML = '';
-      state = deathState; lastTime = performance.now(); if (actx) actx.resume();
+      state = deathState; lastTime = performance.now(); if (actx) actx.resume(); Portal.gameplayStart();
     }
     function doubleEssence() {
       if (state !== 'GAMEOVER' || runDoubled || lastGained <= 0) return;
@@ -997,16 +1042,27 @@
     }
     window.onAdsReady = () => { renderChest(); renderAdOffers(); $('privOptBtn').style.display = BRAds.privacyRequired() ? '' : 'none'; };
 
-    function nextLevel() {
+    // Between zones / before a new run is a natural break: portal builds may show a commercial break there
+    // (the portal decides frequency). Never mid-play. Android/test-site builds: Portal is a no-op.
+    let breaking = false;
+    async function nextLevel() {
+      if (breaking || (state !== 'VICTORY' && state !== 'GAMEOVER')) return;
+      if (Portal.active) { breaking = true; $('nextBtn').disabled = true; await Portal.commercialBreak(window.onAdPause, window.onAdResume); $('nextBtn').disabled = false; breaking = false; }
       if (state === 'VICTORY') { carrySquad = Math.min(40, Math.round(squad.count * 0.5)); level++; initLevel(); }
       else if (state === 'GAMEOVER') newRun();
+      else return;
+      Portal.gameplayStart();
     }
+    window.onAdPause = () => { if (actx && actx.state === 'running') actx.suspend(); };
+    window.onAdResume = () => { if (actx) actx.resume(); };
 
     Sprites.build();
+    Portal.loadingFinished();
     $('startBest').textContent = bestText();
     renderEssence();
     updateMuteUI();
     $('privacyLink').href = (window.BR_CONFIG && BR_CONFIG.PRIVACY_URL) || 'privacy-policy.html';
+    if (Portal.active) document.querySelector('.legal').style.display = 'none'; // portals: no external links
     renderChest();
     BRAds.init();
     if (document.fonts && document.fonts.load) document.fonts.load(font(16)).catch(() => {});
