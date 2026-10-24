@@ -86,6 +86,7 @@ while (Date.now() - t0 < maxSec * 1000 && taken.size < want) {
       state, count: squad.count, form: squad.formation, slow: slowMoTimer, texts: entities.texts.length,
       gateAhead: g ? g.y - trackProgress : null, gateFresh: g ? !g.left.hitTime && !g.right.hitTime : false,
       gateBad: g ? !!(g.left.isBad || g.right.isBad) : false,
+      gateForm: g ? (g.left.type === 'FORM' || g.right.type === 'FORM') : false,
       enemiesNear: entities.enemies.filter(e => e.active && e.y - trackProgress > 120 && e.y - trackProgress < 420).length,
       boss: boss ? { st: boss.state, t: boss.timer } : null,
     };
@@ -101,7 +102,7 @@ while (Date.now() - t0 < maxSec * 1000 && taken.size < want) {
     else if (s.enemiesNear >= 2 && s.texts >= 1 && s.count >= 8) await snap('03-blast-the-swarm');
     else if (s.form === 'WIDE' && s.count >= 25 && s.texts === 0) await snap('04-wide-formation');
     else if (s.form === 'SPEARHEAD' && s.count >= 20) await snap('05-spearhead');
-    else if (s.slow > 1.2) await snap('08-last-stand');
+    else if (s.gateForm && s.gateAhead > 200 && s.gateAhead < 360 && s.texts === 0) await snap('08-formation-gate'); // was a slow-mo 'last stand' that rarely triggers (hung the capture)
   }
   if (s.state === 'BOSS' && s.boss && s.boss.st === 'STRIKE' && s.boss.t < 0.65) await snap('06-gorilla-king-laser');
   await page.waitForTimeout(40);

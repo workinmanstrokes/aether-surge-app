@@ -53,7 +53,7 @@ ok('cast has every gameplay role with unique original names', () => {
 });
 ok('squad evolution stages unlock at 0 / 1500 / 5000 / 12000 run aura', () => {
   const { EVOLVE, stageFor } = (() => { const g = {}; new Function('window', require('fs').readFileSync(path.join(root, 'www/js/sprites.js'), 'utf8'))(g); return g.Sprites; })();
-  assert.deepEqual(EVOLVE.map(e => [e.key, e.title, e.at]), [['trooper', 'ROOKIE', 0], ['trooper2', 'HI-VIS', 1500], ['trooper3', 'CAPED', 5000], ['trooper4', 'LEGEND', 12000]]);
+  assert.deepEqual(EVOLVE.map(e => [e.key, e.title, e.at]), [['trooper', 'ROOKIE', 0], ['trooper2', 'RUNNER', 1500], ['trooper3', 'CAPED', 5000], ['trooper4', 'LEGEND', 12000]]);
   for (const [v, st] of [[0, 0], [1499, 0], [1500, 1], [4999, 1], [5000, 2], [11999, 2], [12000, 3], [1e9, 3]]) assert.equal(stageFor(v), st, 'aura ' + v);
   for (const e of EVOLVE) assert.ok(CAST[e.key] && CAST[e.key].frames >= 2, e.key);
   for (let i = 1; i < EVOLVE.length; i++) assert.ok(CAST[EVOLVE[i].key].h > CAST[EVOLVE[i - 1].key].h, 'each stage is bigger');

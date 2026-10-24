@@ -59,7 +59,7 @@ await p.click('#nextBtn'); await p.waitForTimeout(1500);
 if (await p.evaluate(() => state) === 'PLAYING' && await p.evaluate(() => level) === 2) pass('zone 2 runs'); else fail('zone 2');
 await p.screenshot({ path: process.env.SHOT || '/tmp/br-smoke.png' });
 const ev = await p.evaluate(() => { const s0 = troopStage; addAura(1600); const s1 = troopStage, b1 = document.getElementById('tierBadge').textContent; addAura(20000); return { s0, s1, b1, s2: troopStage }; });
-if (ev.s0 === 0 && ev.s1 === 1 && /EVOLVED: HI-VIS/.test(ev.b1) && ev.s2 === 3) pass(`squad evolves ${ev.s0} -> ${ev.s1} -> ${ev.s2} (${ev.b1})`); else fail('evolution ' + JSON.stringify(ev));
+if (ev.s0 === 0 && ev.s1 === 1 && /EVOLVED: RUNNER/.test(ev.b1) && ev.s2 === 3) pass(`squad evolves ${ev.s0} -> ${ev.s1} -> ${ev.s2} (${ev.b1})`); else fail('evolution ' + JSON.stringify(ev));
 const at = await p.evaluate(() => { const a = Sprites.atlas(); return a && { w: a.width, h: a.height }; });
 if (at && at.w <= 1400 && at.h <= 2048) pass(`sprite atlas ${at.w}x${at.h}`); else fail('sprite atlas ' + JSON.stringify(at));
 await p.evaluate(() => { level = 3; initLevel(); spawnBoss(); boss.state = 'TELEGRAPH'; }); await p.waitForTimeout(600);

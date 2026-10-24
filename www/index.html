@@ -940,10 +940,12 @@
         ctx.restore();
       }
 
-      ctx.lineWidth = 6; ctx.lineCap = 'round'; ctx.strokeStyle = '#38bdf8';
-      ctx.beginPath();
-      for (const b of entities.bullets) { ctx.moveTo(b.x, b.y); ctx.lineTo(b.x, b.y - 20); }
-      ctx.stroke();
+      ctx.lineCap = 'round'; // purple aura beams (matches the mullet dude's staff beam)
+      for (const [lw, col] of [[9, 'rgba(168,85,247,0.55)'], [4, '#f0abfc']]) {
+        ctx.lineWidth = lw; ctx.strokeStyle = col; ctx.beginPath();
+        for (const b of entities.bullets) { ctx.moveTo(b.x, b.y); ctx.lineTo(b.x, b.y - 22); }
+        ctx.stroke();
+      }
 
       if (state !== 'START') {
         ctx.save(); ctx.translate(squad.drawX, trackProgress);
