@@ -12,6 +12,12 @@ ok('daily cap blocks all placements', () => {
   assert.equal(ads.gate(l, 'revive', cfg, T0).ok, false); assert.equal(ads.gate(l, 'zone', cfg, T0).why, 'Daily ad limit reached');
 });
 ok('chest reroll is once per day', () => { const l = {}; ads.gate(l, 'chest', cfg, T0); ads.record(l, 'chest'); assert.equal(ads.gate(l, 'chest', cfg, T0).ok, false); assert.equal(ads.gate(l, 'double', cfg, T0).ok, true); });
+ok('double squad is capped per day (squadDailyCap) and resets tomorrow', () => {
+  const c = { dailyCap: 20, squadDailyCap: 3 }, l = {};
+  for (let k = 0; k < 3; k++) { assert.ok(ads.gate(l, 'squad', c, T0).ok); ads.record(l, 'squad'); }
+  assert.equal(ads.gate(l, 'squad', c, T0).ok, false); assert.equal(ads.gate(l, 'revive', c, T0).ok, true);
+  assert.equal(ads.gate(l, 'squad', c, T1).ok, true);
+});
 ok('caps reset on a new day', () => { const l = {}; ads.gate(l, 'chest', cfg, T0); for (let i = 0; i < 3; i++) ads.record(l, 'chest'); assert.equal(ads.gate(l, 'chest', cfg, T1).ok, true); assert.equal(l.count, 0); });
 ok('dayKey uses local calendar day', () => { assert.equal(ads.dayKey(T0), '2026-10-17'); assert.notEqual(ads.dayKey(T0), ads.dayKey(T1)); });
 

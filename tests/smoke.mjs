@@ -66,6 +66,41 @@ await p.evaluate(() => { level = 3; initLevel(); spawnBoss(); boss.state = 'TELE
 if (await p.evaluate(() => entities.enemies.some(e => e.skin === 'swarmB'))) pass('zone 3 spawns gelato snails'); else fail('no swarmB in zone 3');
 if (await p.evaluate(() => { const lv = level; level = 2; const n0 = entities.enemies.length; spawnSwarmRow(900); level = lv; const row = entities.enemies.slice(n0); return row.some(e => e.skin === 'swarmC') && row.some(e => e.skin === 'swarmA'); })) pass('washer grunts mixed with pineapple knights'); else fail('no swarmC/swarmA mix');
 const led = await p.evaluate(() => save.ads.count); if (led === 4) pass('ledger counted 4 rewarded ads'); else fail('ledger ' + led);
+// boss gate: optional "double squad" offer, once per zone
+await p.evaluate(() => { localStorage.clear(); save.ads = { day: '', count: 0, chest: 0 }; quitToTitle(); });
+await p.click('text=TAP TO START'); await p.waitForTimeout(500);
+await p.evaluate(() => { squad.count = 15; trackProgress = trackLength + 1; }); await p.waitForTimeout(300);
+if (await p.evaluate(() => state) === 'GATE' && await p.$('#squad')) pass('boss gate offers double squad'); else fail('no double squad offer ' + await p.evaluate(() => state));
+await p.click('#squad'); await p.waitForTimeout(2600);
+const sq = await p.evaluate(() => ({ state, count: squad.count, led: save.ads.squad, modal: $('gateModal').style.display }));
+if (sq.state === 'BOSS' && sq.count === 30 && sq.led === 1 && sq.modal === 'none') pass('squad doubled 15 -> 30, boss fight starts'); else fail('double squad ' + JSON.stringify(sq));
+await p.evaluate(() => { level = 2; initLevel(); squad.count = 10; trackProgress = trackLength + 1; }); await p.waitForTimeout(300);
+await p.click('#gateFight'); await p.waitForTimeout(200);
+if (await p.evaluate(() => state) === 'BOSS') pass('FIGHT NOW skips the offer'); else fail('fight now');
+await p.evaluate(() => { save.ads.squad = 3; level = 3; initLevel(); trackProgress = trackLength + 1; }); await p.waitForTimeout(300);
+if (await p.evaluate(() => state) === 'BOSS') pass('no offer once the daily cap (3) is used'); else fail('squad daily cap');
+await p.close();
+
+// 3) portal build mode (?portal=poki) with a mock SDK: events + rewarded via the portal, keyboard steering
+p = await b.newPage({ viewport: { width: 900, height: 700 } });
+p.on('pageerror', e => errs.push(e.message));
+await p.addInitScript(() => { window.__calls = []; const c = n => (...a) => { window.__calls.push(n); return n === 'rewardedBreak' ? Promise.resolve(true) : Promise.resolve(); };
+  window.PokiSDK = { init: c('init'), gameLoadingFinished: c('gameLoadingFinished'), gameplayStart: c('gameplayStart'), gameplayStop: c('gameplayStop'), commercialBreak: c('commercialBreak'), rewardedBreak: c('rewardedBreak') }; });
+await p.goto(URL + '?portal=poki', { waitUntil: 'load' }); await p.waitForTimeout(500);
+if (await p.evaluate(() => Portal.active && document.querySelector('.legal').style.display === 'none')) pass('portal mode: active, no external links'); else fail('portal mode');
+await p.keyboard.press('Enter'); await p.waitForTimeout(400);
+if (await p.evaluate(() => state) === 'PLAYING') pass('Enter starts a run'); else fail('Enter start');
+const x0 = await p.evaluate(() => squad.targetX); await p.keyboard.down('ArrowRight'); await p.waitForTimeout(300); await p.keyboard.up('ArrowRight');
+const x1 = await p.evaluate(() => squad.targetX); if (x1 > x0 + 40) pass(`arrow keys steer (${x0} -> ${Math.round(x1)})`); else fail('arrow steer ' + x0 + ' ' + x1);
+await p.evaluate(() => { squad.count = 0; gameOver(); }); await p.waitForTimeout(200);
+if (await p.$('#revive')) pass('portal rewarded offers show'); else fail('no portal offers');
+await p.click('#revive'); await p.waitForTimeout(400);
+if (await p.evaluate(() => state) === 'PLAYING') pass('revive via portal rewardedBreak'); else fail('portal revive');
+await p.evaluate(() => { squad.count = 0; gameOver(); }); await p.click('#nextBtn'); await p.waitForTimeout(400);
+const calls = await p.evaluate(() => window.__calls.join(','));
+const want = ['init', 'gameLoadingFinished', 'gameplayStart', 'gameplayStop', 'rewardedBreak', 'commercialBreak'];
+if (want.every(w => calls.includes(w)) && calls.indexOf('gameLoadingFinished') < calls.indexOf('gameplayStart')) pass('poki events: ' + calls); else fail('poki events ' + calls);
+await p.close();
 await b.close();
 if (errs.length) fail('page errors: ' + errs.join(' | ')); else pass('no page errors');
 process.exitCode = fails ? 1 : 0; console.log(fails ? `${fails} failed` : 'smoke passed');

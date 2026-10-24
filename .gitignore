@@ -12,3 +12,4 @@ keystore/*.jks
 keystore/*.keystore
 .DS_Store
 *.log
+dist/
