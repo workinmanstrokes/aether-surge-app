@@ -13,7 +13,7 @@ android {
         applicationId "com.brainrot.aurarush"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 3
+        versionCode 4
         versionName "1.0"
         // Real AdMob App ID only from android/admob.properties (configure.mjs --release); Google's TEST app id otherwise.
         def admobProps = new Properties()
