@@ -66,6 +66,12 @@ await p.evaluate(() => { level = 3; initLevel(); spawnBoss(); boss.state = 'TELE
 if (await p.evaluate(() => entities.enemies.some(e => e.skin === 'swarmB'))) pass('zone 3 spawns gelato snails'); else fail('no swarmB in zone 3');
 if (await p.evaluate(() => { const lv = level; level = 2; const n0 = entities.enemies.length; spawnSwarmRow(900); level = lv; const row = entities.enemies.slice(n0); return row.some(e => e.skin === 'swarmC') && row.some(e => e.skin === 'swarmA'); })) pass('washer grunts mixed with pineapple knights'); else fail('no swarmC/swarmA mix');
 const led = await p.evaluate(() => save.ads.count); if (led === 4) pass('ledger counted 4 rewarded ads'); else fail('ledger ' + led);
+// Sweeping Old Man boss (even zones): Dust Bawl wind-up launches growing dust balls, close-range broom sweep
+await p.evaluate(() => { level = 2; initLevel(); spawnBoss(); boss.timer = 0; boss.attacks = 0; }); await p.waitForTimeout(1500);
+const sw = await p.evaluate(() => ({ kind: boss.kind, name: $('bossName').textContent, dust: entities.dust.length, r: entities.dust.reduce((m, d) => Math.max(m, d.r), 0), st: boss.state }));
+if (sw.kind === 'sweeper' && /SWEEPING OLD MAN/.test(sw.name) && sw.dust > 0 && sw.r > 14) pass(`sweeper boss throws dust balls (${sw.dust}, r ${sw.r.toFixed(1)})`); else fail('sweeper ' + JSON.stringify(sw));
+await p.screenshot({ path: process.env.BOSS_SHOT || '/tmp/br-sweeper.png' });
+if (await p.evaluate(() => { level = 3; initLevel(); spawnBoss(); return boss.kind; }) === 'grump') pass('odd zones keep the Grump King'); else fail('rotation');
 // boss gate: optional "double squad" offer, once per zone
 await p.evaluate(() => { localStorage.clear(); save.ads = { day: '', count: 0, chest: 0 }; quitToTitle(); });
 await p.click('text=TAP TO START'); await p.waitForTimeout(500);

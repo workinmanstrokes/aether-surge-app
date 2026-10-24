@@ -237,6 +237,15 @@
       for (let i = 0; i < 3; i++) { c.beginPath(); c.moveTo(21 - i * 2.5, -33 + i * 0); c.lineTo(23 - i * 2.5, -26); c.lineWidth = 0.9; c.strokeStyle = 'rgba(26,16,51,0.6)'; c.stroke(); } // gills
       shine(c, -11, -38, 6, 2.4, 0.6);
     } },
+    // Boss 2: the Sweeping Old Man. Nonno Scopazzo gone rogue, hunched over a giant push broom. Reuses the commander's
+    // art, bigger and stooped. Frame 2 is the wind-up, with the broom hauled back before a Dust Bawl.
+    sweeper: { name: 'Nonno Scopazzo, the Sweeping Old Man', role: 'Boss', w: 172, h: 132, frames: 3, draw(c, f) {
+      c.save(); c.scale(1.5, 1.5);
+      c.transform(1, 0, f === 2 ? 0.28 : -0.12, 1, 0, 0); // hunch forward, rear back on the wind-up
+      if (f === 2) { c.translate(4, 0); c.scale(-1, 1); }
+      CAST.leader.draw(c, f & 1);
+      c.restore();
+    } },
     // Boss: a GIANT grumpy fleshy blob head in mirrored aviator shades with a bushy mustache, waddling on stubby feet.
     // Frame 2 (laser telegraph/strike): the shades glow red.
     boss: { name: 'Testone Baffolini, the Grump King', role: 'Boss', w: 184, h: 192, frames: 3, draw(c, f) {
@@ -288,7 +297,7 @@
     const doc = root.document; if (!doc) return;
     const pad = 4; let x = 0, y = 0, rowH = 0; const maxW = 1400, place = [];
     for (const key in CAST) {
-      const s = CAST[key], px = key === 'boss' ? 2 : PX, fw = Math.ceil(s.w * px) + pad * 2, fh = Math.ceil(s.h * px) + pad * 2;
+      const s = CAST[key], px = (key === 'boss' || key === 'sweeper') ? 2 : PX, fw = Math.ceil(s.w * px) + pad * 2, fh = Math.ceil(s.h * px) + pad * 2;
       const list = [...Array(s.frames).keys(), 'hit'];
       for (const fr of list) { if (x + fw > maxW) { x = 0; y += rowH; rowH = 0; } place.push({ key, fr, x, y, fw, fh, px }); x += fw; rowH = Math.max(rowH, fh); }
     }
