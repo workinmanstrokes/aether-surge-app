@@ -43,62 +43,62 @@
   // Shared bodies (palette P) so the same character can serve as a friendly unit or a tinted enemy.
   // Top-hat kid. Optional evolution gear in P: hatUp (taller hat), hat colour, gem, trim, glow (cyan aura alpha),
   // cape {cloth, lining}, goggles, pads, sparkles.
+  // Mullet dude (Michael's likeness): stylized cutout of his real head (www/assets/mullet-face.png, made by
+  // tools/art/mullet-face.py) on a glossy toy body: open neon hi-vis vest over a gray tee, dark pants, black
+  // fingerless gloves, lanyard, white earbud and a thick yellow pole as a staff. Gear gets flashier per evolution.
+  let atlas = null;
+  const FACE = (typeof Image !== 'undefined') ? new Image() : null;
+  if (FACE) { FACE.onload = () => { atlas = null; }; FACE.src = 'assets/mullet-face.png'; }
   function drawKid(c, f, P) {
-      // "Cilindrino Bimbetto" v2: chunky toy hero. Big glossy head, tall tilted top hat with a lightning band,
-      // streaming scarf, two-tone hoodie with a star badge, oversized aura arm-cannon. Thick outline = readable small.
-      const w = f ? 1 : 0, SKIN = '#f0bd92', HAT = P.hat || '#1f2937', Hh = 21 + (P.hatUp || 0), L = 1.7;
-      const SCARF = P.scarf || '#f43f5e';
+      const w = f ? 1 : 0, SKIN = '#e9b48f', L = 1.7, VEST = P.vest || '#d4ff1e', TEE = '#7b8089', PANT = '#262a33';
       if (P.glow) {
-        const g = c.createRadialGradient(0, -24, 2, 0, -24, 28); g.addColorStop(0, `rgba(103,232,249,${P.glow})`); g.addColorStop(0.6, `rgba(34,211,238,${P.glow * 0.45})`); g.addColorStop(1, 'rgba(34,211,238,0)');
-        ell(c, 0, -24, 28, 28); c.fillStyle = g; c.fill();
+        const g = c.createRadialGradient(0, -26, 2, 0, -26, 30); g.addColorStop(0, `rgba(253,224,71,${P.glow})`); g.addColorStop(0.6, `rgba(250,204,21,${P.glow * 0.45})`); g.addColorStop(1, 'rgba(250,204,21,0)');
+        ell(c, 0, -26, 30, 30); c.fillStyle = g; c.fill();
       }
       if (P.cape) {
-        c.beginPath(); c.moveTo(-7, -21); c.quadraticCurveTo(-15, -10, -15 - w, 0); c.quadraticCurveTo(-7, 2 + w, 0, -1); c.quadraticCurveTo(7, 2 - w, 15 + w, 0); c.quadraticCurveTo(15, -10, 7, -21); c.closePath();
+        c.beginPath(); c.moveTo(-8, -22); c.quadraticCurveTo(-16, -10, -16 - w, 0); c.quadraticCurveTo(-7, 2 + w, 0, -1); c.quadraticCurveTo(7, 2 - w, 16 + w, 0); c.quadraticCurveTo(16, -10, 8, -22); c.closePath();
         c.fillStyle = glossFill(c, 0, -11, 15, 11, P.cape.cloth); c.fill(); c.lineWidth = L; c.strokeStyle = OUT; c.stroke();
-        c.beginPath(); c.moveTo(-14 - w, -1); c.quadraticCurveTo(-7, 1 + w, 0, -1); c.quadraticCurveTo(7, 1 - w, 14 + w, -1); c.lineWidth = 1.8; c.strokeStyle = P.cape.lining; c.stroke();
+        c.beginPath(); c.moveTo(-15 - w, -1); c.quadraticCurveTo(-7, 1 + w, 0, -1); c.quadraticCurveTo(7, 1 - w, 15 + w, -1); c.lineWidth = 1.8; c.strokeStyle = P.cape.lining; c.stroke();
       }
-      // scarf tail streaming back-left (flaps between frames)
-      c.beginPath(); c.moveTo(-4, -22); c.quadraticCurveTo(-13, -24 - w * 2, -19, -19 + w * 2); c.lineTo(-16, -16 + w); c.quadraticCurveTo(-11, -20, -3, -19); c.closePath();
-      c.fillStyle = glossFill(c, -11, -20, 8, 4, SCARF); c.fill(); c.lineWidth = L * 0.8; c.strokeStyle = OUT; c.stroke();
-      // chunky sneakers with white soles, stance
-      for (const [x, d] of [[-5.5 - w, -1], [5.5 + w, 1]]) { box(c, x - 4.5, -5, 9, 4, 2, P.shoe || '#ef4444', L * 0.8); rr(c, x - 4.8, -2, 9.6, 2.2, 1); c.fillStyle = '#f8fafc'; c.fill(); c.lineWidth = 0.9; c.strokeStyle = OUT; c.stroke(); }
-      box(c, -7.5, -11, 5.5, 7, 2, P.legs, L * 0.8); box(c, 2, -11, 5.5, 7, 2, P.legs, L * 0.8);
-      // hoodie: two-tone body
-      box(c, -9.5, -23, 19, 14, 6, P.hoodie, L);
-      c.save(); rr(c, -9.5, -23, 19, 14, 6); c.clip(); c.fillStyle = mix(P.hoodie, -0.25); c.fillRect(-9.5, -13, 19, 4); c.restore();
-      // star badge
-      c.beginPath(); for (let k = 0; k < 10; k++) { const a = -Math.PI / 2 + k * Math.PI / 5, r = k % 2 ? 1.5 : 3.4; c.lineTo(-2.5 + Math.cos(a) * r, -16 + Math.sin(a) * r); } c.closePath();
-      c.fillStyle = P.trim || '#facc15'; c.fill(); c.lineWidth = 0.8; c.strokeStyle = OUT; c.stroke();
-      if (P.pads) { blob(c, -9, -21, 3.8, 2.6, P.pads, 1, -0.3); blob(c, 9, -21, 3.8, 2.6, P.pads, 1, 0.3); }
-      // back arm
-      c.beginPath(); c.moveTo(-8, -19); c.quadraticCurveTo(-12, -15, -11, -11); c.lineWidth = 5.6; c.strokeStyle = OUT; c.stroke(); c.lineWidth = 3.6; c.strokeStyle = P.hoodie; c.stroke();
-      blob(c, -11, -10.5, 2.6, 2.6, SKIN, 1);
-      // big aura arm-cannon held up-right
-      c.save(); c.translate(9, -20); c.rotate(-0.55 + w * 0.05);
-      box(c, 0, -4, 15, 8, 3, '#334155', L);
-      box(c, 13, -5, 5, 10, 2, P.blaster || '#22d3ee', L * 0.8);
-      blob(c, 6, 0, 2.6, 2.6, P.blaster || '#22d3ee', 0.8); shine(c, 5.2, -0.8, 1, 0.7, 0.9);
+      // yellow pole staff held diagonally behind the body (bobs between frames)
+      c.save(); c.translate(8, -17); c.rotate(0.62 - w * 0.08);
+      box(c, -2.4, -30, 4.8, 44, 2.2, P.pole || '#f5c518', L);
+      c.fillStyle = 'rgba(255,255,255,0.55)'; c.fillRect(-1.3, -28, 1.1, 40);
+      if (P.gem) { blob(c, 0, -31, 3.6, 3.6, P.gem, 1); shine(c, -1, -32, 1.2, 0.8, 0.9); }
       c.restore();
-      // scarf wrap around the neck
-      box(c, -7, -24.5, 14, 4, 2, SCARF, L * 0.8);
-      // big round head
-      blob(c, 0, -31, 10, 9.4, SKIN, L);
-      blob(c, -7, -28, 1.8, 1.1, '#fca5a5', 0); blob(c, 7, -28, 1.8, 1.1, '#fca5a5', 0);
-      eye(c, -3.7, -31.5, 2.9, 0.3, 0.1); eye(c, 3.7, -31.5, 2.9, 0.3, 0.1);
-      c.beginPath(); c.moveTo(-6.5, -35.5); c.lineTo(-1.5, -34.4); c.moveTo(1.5, -34.4); c.lineTo(6.5, -35.5); c.lineWidth = 1.3; c.strokeStyle = OUT; c.stroke(); // determined brows
-      grin(c, 0.5, -27, 9, 2.4, 4, 0.9);
-      // tall tilted top hat, lightning band
-      c.save(); c.translate(0, -38); c.rotate(-0.16 + w * 0.06);
-      blob(c, 0, 0, 16, 3.6, HAT, L);
-      box(c, -10.5, -Hh, 21, Hh, 3.5, HAT, L);
-      box(c, -10.5, -7, 21, 5, 1, P.band, L * 0.7);
-      c.beginPath(); c.moveTo(-6, -2.5); c.lineTo(-2, -6.5); c.lineTo(0, -3.5); c.lineTo(4, -7); c.lineWidth = 1.3; c.strokeStyle = OUT; c.stroke();
-      if (P.gem) { c.beginPath(); c.moveTo(6.5, -8.5); c.lineTo(9, -4.5); c.lineTo(6.5, -0.8); c.lineTo(4, -4.5); c.closePath(); c.fillStyle = glossFill(c, 6.5, -4.5, 3, 3.6, P.gem); c.fill(); c.lineWidth = 0.8; c.strokeStyle = OUT; c.stroke(); }
-      if (P.goggles) { box(c, -11, -Hh * 0.62 - 2.2, 22, 2, 1, '#7c2d12', 0.6); for (const gx of [-4.5, 4.5]) { blob(c, gx, -Hh * 0.62 - 1.2, 3.8, 3.4, '#f59e0b', 0.9); ell(c, gx, -Hh * 0.62 - 1.2, 2.6, 2.3); c.fillStyle = glossFill(c, gx, -Hh * 0.62 - 1.2, 2.6, 2.3, '#a5f3fc'); c.fill(); } }
-      shine(c, -6.5, -Hh * 0.7, 1.7, Hh * 0.26, 0.55, 0); c.restore();
+      // black boots + dark pants
+      for (const x of [-5.5 - w, 5.5 + w]) box(c, x - 4.5, -4.5, 9, 4.2, 2, '#111318', L * 0.8);
+      box(c, -8, -12, 6, 8, 2, PANT, L * 0.8); box(c, 2, -12, 6, 8, 2, PANT, L * 0.8);
+      // gray tee torso
+      box(c, -9.5, -24, 19, 14, 5, TEE, L);
+      // lanyard
+      c.beginPath(); c.moveTo(-3, -24); c.lineTo(0, -15); c.lineTo(3, -24); c.lineWidth = 0.8; c.strokeStyle = '#0b0b0f'; c.stroke();
+      box(c, -1.6, -16, 3.2, 3.4, 0.6, P.badge || '#f8fafc', 0.6);
+      // open hi-vis vest panels with reflective stripes
+      for (const sd of [-1, 1]) {
+        c.beginPath(); c.moveTo(sd * 9.8, -23); c.lineTo(sd * 3.6, -23.5); c.lineTo(sd * 5, -10); c.lineTo(sd * 9.8, -10); c.closePath();
+        c.fillStyle = glossFill(c, sd * 7, -17, 4, 7, VEST); c.fill(); c.lineWidth = L * 0.8; c.strokeStyle = OUT; c.stroke();
+        for (const y of [-18, -13.5]) { c.fillStyle = P.stripe || '#e5e7eb'; c.fillRect(sd > 0 ? 4.5 : -9.6, y, 5.1, 1.5); }
+      }
+      if (P.pads) { blob(c, -9.5, -22, 3.8, 2.6, P.pads, 1, -0.3); blob(c, 9.5, -22, 3.8, 2.6, P.pads, 1, 0.3); }
+      // arms: gray sleeves, skin forearms, black fingerless gloves gripping the pole
+      c.beginPath(); c.moveTo(-8.5, -21); c.quadraticCurveTo(-12, -16, -11, -12); c.lineWidth = 5.6; c.strokeStyle = OUT; c.stroke(); c.lineWidth = 3.6; c.strokeStyle = SKIN; c.stroke();
+      blob(c, -11, -11.5, 2.7, 2.7, '#111318', 1);
+      c.beginPath(); c.moveTo(8.5, -21); c.quadraticCurveTo(11, -18, 9.5, -14.5); c.lineWidth = 5.6; c.strokeStyle = OUT; c.stroke(); c.lineWidth = 3.6; c.strokeStyle = SKIN; c.stroke();
+      blob(c, 9.5, -14, 2.7, 2.7, '#111318', 1);
+      // head: real-likeness cutout if loaded, else a toy fallback (shaved top + mullet)
+      const hy = -36 - w * 0.6;
+      if (FACE && FACE.complete && FACE.naturalWidth) c.drawImage(FACE, -12, hy - 13.5, 24, 29.2);
+      else {
+        blob(c, -2, hy + 8, 11, 9, '#b4532a', L); blob(c, 0, hy, 10, 11, SKIN, L);
+        eye(c, -3.5, hy, 2.2, 0.2, 0.1); eye(c, 3.5, hy, 2.2, 0.2, 0.1);
+        c.beginPath(); c.moveTo(-4, hy + 5); c.lineTo(4, hy + 5); c.lineWidth = 1.2; c.strokeStyle = '#7c3a1d'; c.stroke();
+      }
+      blob(c, -11, hy + 2, 1.5, 1.8, '#ffffff', 0.7); // white earbud
+      if (P.goggles) { box(c, -9.5, hy - 3.6, 19, 4.6, 2, '#0f172a', 0.8); shine(c, -5, hy - 2.4, 2, 0.7, 0.8, 0); shine(c, 4, hy - 2.4, 2, 0.7, 0.8, 0); }
       if (P.sparkles) {
-        c.fillStyle = '#ecfeff';
-        for (const [x, y, r] of (w ? [[-16, -44, 2.4], [17, -10, 2], [-15, -12, 1.6]] : [[16, -50, 2.4], [-17, -28, 2], [14, -4, 1.6]])) { c.beginPath(); for (let k = 0; k < 8; k++) { const a = k * Math.PI / 4, rr2 = k % 2 ? r * 0.35 : r; c.lineTo(x + Math.cos(a) * rr2, y + Math.sin(a) * rr2); } c.closePath(); c.fill(); }
+        c.fillStyle = '#fef9c3';
+        for (const [x, y, r] of (w ? [[-16, -48, 2.4], [17, -10, 2], [-15, -12, 1.6]] : [[16, -52, 2.4], [-17, -28, 2], [14, -4, 1.6]])) { c.beginPath(); for (let k = 0; k < 8; k++) { const a = k * Math.PI / 4, rr2 = k % 2 ? r * 0.35 : r; c.lineTo(x + Math.cos(a) * rr2, y + Math.sin(a) * rr2); } c.closePath(); c.fill(); }
       }
   }
   function drawWasher(c, f, P) {
@@ -125,14 +125,14 @@
   }
 
   // Squad evolution palettes (all keep the teal/cyan squad identity).
-  const KID1 = { hoodie: '#14b8a6', string: '#ccfbf1', band: '#22d3ee', legs: '#0f3d3a', blaster: '#22d3ee', scarf: '#f43f5e', shoe: '#ef4444' };
-  const KID2 = { ...KID1, hoodie: '#2dd4bf', hatUp: 3, band: '#facc15', gem: '#22d3ee', trim: '#facc15', glow: 0.28 };
-  const KID3 = { ...KID2, hoodie: '#0ea5a4', hatUp: 6, goggles: true, pads: '#e2e8f0', cape: { cloth: '#1e3a8a', lining: '#22d3ee' }, glow: 0.45, blaster: '#67e8f9' };
-  const KID4 = { ...KID3, hoodie: '#2dd4bf', hat: '#3b0764', band: '#facc15', gem: '#f0abfc', hatUp: 9, pads: '#facc15', cape: { cloth: '#0e7490', lining: '#facc15' }, glow: 0.7, sparkles: true, scarf: '#facc15', shoe: '#a855f7' };
+  const KID1 = {};
+  const KID2 = { ...KID1, glow: 0.28, gem: '#22d3ee', badge: '#facc15' };
+  const KID3 = { ...KID2, goggles: true, pads: '#e2e8f0', cape: { cloth: '#1e3a8a', lining: '#d4ff1e' }, glow: 0.45, stripe: '#a5f3fc' };
+  const KID4 = { ...KID3, vest: '#fde047', pole: '#fbbf24', gem: '#f0abfc', pads: '#facc15', cape: { cloth: '#7e22ce', lining: '#facc15' }, glow: 0.7, sparkles: true, stripe: '#fff7ae' };
   // Evolution stages, unlocked by aura earned in the current run (resets every run). Sorted by threshold.
   const EVOLVE = [
     { key: 'trooper', title: 'ROOKIE', at: 0 },
-    { key: 'trooper2', title: 'DAPPER', at: 1500 },
+    { key: 'trooper2', title: 'HI-VIS', at: 1500 },
     { key: 'trooper3', title: 'CAPED', at: 5000 },
     { key: 'trooper4', title: 'LEGEND', at: 12000 },
   ];
@@ -140,19 +140,18 @@
 
   // ---------- The cast ----------
   const CAST = {
-    // Player troops: a tiny grinning kid in an oversized top hat with a glowing cyan band, teal squad hoodie and a
-    // little cyan blaster. Squad teal + cyan stays readable in big clusters and never matches an enemy colour.
+    // Player troops: the mullet dude (Michael) in an open hi-vis vest with his yellow pole staff.
     // The squad EVOLVES during a run (see EVOLVE below): trooper -> trooper2 -> trooper3 -> trooper4, each bigger and flashier.
-    trooper: { name: 'Cilindrino Bimbetto', role: 'Your trooper (evo 1: start)', w: 44, h: 44, frames: 2, draw(c, f) {
+    trooper: { name: 'Mulletto Bastonato', role: 'Your trooper (evo 1: start)', w: 44, h: 44, frames: 2, draw(c, f) {
       c.scale(0.72, 0.72); drawKid(c, f, KID1);
     } },
-    trooper2: { name: 'Cilindrino Bimbetto (Dapper)', role: 'Evo 2: 1,500 run aura', w: 48, h: 52, frames: 2, draw(c, f) {
+    trooper2: { name: 'Mulletto Bastonato (Hi-Vis)', role: 'Evo 2: 1,500 run aura', w: 48, h: 52, frames: 2, draw(c, f) {
       c.scale(0.77, 0.77); drawKid(c, f, KID2);
     } },
-    trooper3: { name: 'Cilindrino Bimbetto (Caped)', role: 'Evo 3: 5,000 run aura', w: 54, h: 59, frames: 2, draw(c, f) {
+    trooper3: { name: 'Mulletto Bastonato (Caped)', role: 'Evo 3: 5,000 run aura', w: 54, h: 59, frames: 2, draw(c, f) {
       c.scale(0.82, 0.82); drawKid(c, f, KID3);
     } },
-    trooper4: { name: 'Cilindrino Bimbetto (Legend)', role: 'Evo 4: 12,000 run aura', w: 60, h: 70, frames: 2, draw(c, f) {
+    trooper4: { name: 'Mulletto Bastonato (Legend)', role: 'Evo 4: 12,000 run aura', w: 60, h: 70, frames: 2, draw(c, f) {
       c.scale(0.88, 0.88); drawKid(c, f, KID4);
     } },
     // Squad commander: a wild-haired, grinning old grease-monkey in overalls, sweeping up dust clouds with a push broom.
@@ -310,7 +309,7 @@
 
   // ---------- Atlas ----------
   const PX = 3; // atlas pixels per world unit (sprites are drawn at <= ~2.6 px/unit on phones)
-  let atlas = null; const frames = {};
+  const frames = {};
   function build() {
     const doc = root.document; if (!doc) return;
     const pad = 4; let x = 0, y = 0, rowH = 0; const maxW = 1400, place = [];
