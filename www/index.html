@@ -956,9 +956,6 @@
         }
         ctx.save(); ctx.scale(1, -1);
         let depth = 0; for (const s of slots) depth = Math.max(depth, -s[1]);
-        // squad commander hovers beside the squad, off to the rear-left
-        const lh = Sprites.CAST.leader.h * 0.6, hover = Math.sin(performance.now() / 260) * 3;
-        Sprites.draw(ctx, 'leader', anim, -(hw + 36), depth * 0.5 + lh * 0.5 + hover, 0.6);
         const tKey = Sprites.EVOLVE[troopStage].key, th = Sprites.CAST.trooper.h * 0.82;
         if (evolveFlash > 0) evolveFlash -= rawDt || 0.016;
         const flashOn = evolveFlash > 0 && (Math.floor(evolveFlash * 16) & 1);
