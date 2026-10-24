@@ -37,4 +37,19 @@ ok('release build uses real secrets', () => {
 });
 ok('release without secrets stays on TEST ids and warns', () => { const d = scratch(); const out = run(d, ['--release'], {}); assert.match(out, /MUST NOT SHIP/); assert.match(fs.readFileSync(path.join(d, 'www/js/config.js'), 'utf8'), /testing: true/); });
 ok('malformed ids are rejected', () => { const d = scratch(); assert.throws(() => run(d, ['--release'], { ...REAL, ADMOB_REWARDED_ID: 'oops' })); });
+// sprite cast (js/sprites.js): original names, all roles present, sane sizes
+const { CAST } = (() => { const g = {}; new Function('window', require('fs').readFileSync(path.join(root, 'www/js/sprites.js'), 'utf8'))(g); return g.Sprites; })();
+ok('cast has every gameplay role with unique original names', () => {
+  for (const k of ['trooper', 'leader', 'swarmA', 'swarmB', 'swarmC', 'tank', 'boss']) { assert.ok(CAST[k], k); assert.ok(CAST[k].w > 0 && CAST[k].h > 0 && CAST[k].frames >= 2); }
+  assert.deepEqual(['trooper', 'leader', 'swarmC', 'boss'].map(k => CAST[k].name), ['Cilindrino Bimbetto', 'Nonno Scopazzo', 'Lavatrino Schiumoso', 'Testone Baffolini, the Grump King']);
+  const names = Object.values(CAST).map(c => c.name); assert.equal(new Set(names).size, names.length);
+  assert.ok(!names.some(nm => /bombardiro|crocodilo|cappuccina|tung|sahur|tralalero|tralala|lirili|larila|brr ?brr|patapim|skibidi|toilet|chimpanzini|bananini|assassino|trippi|troppi/i.test(nm)));
+});
+ok('squad evolution stages unlock at 0 / 1500 / 5000 / 12000 run aura', () => {
+  const { EVOLVE, stageFor } = (() => { const g = {}; new Function('window', require('fs').readFileSync(path.join(root, 'www/js/sprites.js'), 'utf8'))(g); return g.Sprites; })();
+  assert.deepEqual(EVOLVE.map(e => [e.key, e.title, e.at]), [['trooper', 'ROOKIE', 0], ['trooper2', 'DAPPER', 1500], ['trooper3', 'CAPED', 5000], ['trooper4', 'LEGEND', 12000]]);
+  for (const [v, st] of [[0, 0], [1499, 0], [1500, 1], [4999, 1], [5000, 2], [11999, 2], [12000, 3], [1e9, 3]]) assert.equal(stageFor(v), st, 'aura ' + v);
+  for (const e of EVOLVE) assert.ok(CAST[e.key] && CAST[e.key].frames >= 2, e.key);
+  for (let i = 1; i < EVOLVE.length; i++) assert.ok(CAST[EVOLVE[i].key].h > CAST[EVOLVE[i - 1].key].h, 'each stage is bigger');
+});
 console.log(`\n${n} tests passed`);

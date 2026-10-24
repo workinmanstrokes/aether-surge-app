@@ -24,7 +24,7 @@ const www = path.join(root, 'www');
 const server = http.createServer((req, res) => {
   const f = path.join(www, decodeURIComponent(req.url.split('?')[0]).replace(/\/$/, '/index.html'));
   if (!f.startsWith(www) || !fs.existsSync(f)) { res.writeHead(404); return res.end(); }
-  res.writeHead(200, { 'content-type': f.endsWith('.html') ? 'text/html' : 'application/octet-stream' });
+  res.writeHead(200, { 'content-type': f.endsWith('.html') ? 'text/html' : f.endsWith('.js') ? 'text/javascript' : 'application/octet-stream' });
   fs.createReadStream(f).pipe(res);
 }).listen(0, '127.0.0.1');
 await new Promise(r => server.once('listening', r));
