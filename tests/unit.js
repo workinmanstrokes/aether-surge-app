@@ -58,4 +58,57 @@ ok('squad evolution stages unlock at 0 / 1500 / 5000 / 12000 run aura', () => {
   for (const e of EVOLVE) assert.ok(CAST[e.key] && CAST[e.key].frames >= 2, e.key);
   for (let i = 1; i < EVOLVE.length; i++) assert.ok(CAST[EVOLVE[i].key].h > CAST[EVOLVE[i - 1].key].h, 'each stage is bigger');
 });
+
+// Aura Box (js/aurabox.js): odds, rolls, run grants, migration-safe state
+const AB = require('../www/js/aurabox.js');
+const near = (a, b, eps) => Math.abs(a - b) <= eps;
+ok('aura box: base, final and mutation odds each sum to 100%', () => {
+  assert.ok(near(AB.TIERS.reduce((a, t) => a + t.w, 0), 1, 1e-9)); assert.ok(near(AB.MUTS.reduce((a, m) => a + m.w, 0), 1, 1e-9));
+  const fo = AB.finalOdds(); assert.equal(fo.length, 5); assert.ok(near(fo.reduce((a, b) => a + b, 0), 1, 1e-9));
+  for (let i = 0; i < 4; i++) assert.ok(fo[i + 1] < fo[i], 'rarer tiers are less likely');
+});
+ok('aura box: rolled outcomes match the published final odds', () => {
+  let seed = 7; const rng = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const N = 200000, cnt = [0, 0, 0, 0, 0], mc = { n: 0, g: 0, r: 0 }, fo = AB.finalOdds();
+  for (let i = 0; i < N; i++) {
+    const r = AB.rollBox(rng), t = AB.finalTier(r); cnt[t]++; mc[r.mut]++;
+    assert.equal(AB.ITEMS.find(x => x.id === r.item).t, t); assert.equal(r.ups.length, AB.UP_TAPS);
+  }
+  cnt.forEach((c, i) => assert.ok(near(c / N, fo[i], 0.006), `tier ${i}: ${c / N} vs ${fo[i]}`));
+  AB.MUTS.forEach(m => assert.ok(near(mc[m.id] / N, m.w, 0.005), m.id));
+});
+ok('aura box: 3 original auras per tier, unique names, no trademarked brainrot names', () => {
+  for (let t = 0; t < 5; t++) assert.equal(AB.ITEMS.filter(i => i.t === t).length, 3);
+  const names = AB.ITEMS.map(i => i.n); assert.equal(new Set(names).size, names.length); assert.equal(AB.TOTAL, 45);
+  assert.ok(!names.some(nm => /bombardiro|crocodilo|cappuccina|tung|sahur|tralalero|tralala|lirili|larila|patapim|skibidi|toilet|chimpanzini|bananini|assassino|trippi|troppi/i.test(nm)));
+});
+ok('aura box: one free box per played run, one ad bonus per run', () => {
+  const s = AB.fresh(); assert.equal(AB.endRun(s, true), false, 'no run started');
+  AB.startRun(s); assert.equal(AB.canBonus(s), false); assert.equal(AB.endRun(s, false), false, 'start->quit gives nothing');
+  assert.equal(AB.endRun(s, true), true); assert.equal(AB.endRun(s, true), false, 'revive + second wipe-out: still 1'); assert.equal(s.pending, 1);
+  assert.equal(AB.grantBonus(s), true); assert.equal(AB.grantBonus(s), false); assert.equal(s.pending, 2);
+  AB.startRun(s); assert.equal(AB.canBonus(s), false, 'bonus belongs to a finished run'); AB.endRun(s, true); assert.equal(AB.canBonus(s), true);
+});
+ok('aura box: opening records the prize; duplicates pay Essence (x3 gold, x6 rainbow)', () => {
+  const s = AB.fresh(); s.pending = 3; const roll = { base: 2, ups: [false, false, false, false], mut: 'n', item: 'gelatogalaxy', seed: 1, taps: 4 };
+  const a = AB.record(s, roll); assert.deepEqual([a.isNew, a.essence, a.tier], [true, 0, 2]); assert.equal(s.pending, 2); assert.equal(s.news['gelatogalaxy|n'], 1);
+  const b = AB.record(s, roll); assert.deepEqual([b.isNew, b.essence], [false, AB.TIERS[2].dupe]);
+  AB.record(s, { ...roll, mut: 'r' }); assert.equal(AB.record(s, { ...roll, mut: 'r' }).essence, AB.TIERS[2].dupe * 6);
+  assert.deepEqual(AB.completion(s), { have: 2, total: 45, pct: 4 });
+  assert.equal(AB.tierAt({ base: 0, ups: [true, false, true, false] }, 1), 1); assert.equal(AB.tierAt({ base: 0, ups: [true, false, true, false] }, 4), 2);
+});
+ok('aura box: migrate() survives garbage and keeps valid data', () => {
+  for (const bad of [null, undefined, 42, 'x', [], { owned: 'nope', pending: 'lots', cur: 5 }]) { const s = AB.migrate(bad); assert.equal(s.v, AB.VERSION); assert.equal(s.pending, 0); assert.deepEqual(s.owned, {}); }
+  const s = AB.migrate({ pending: 1e9, run: 4, granted: 9, bonus: -3, owned: { 'mewmist|n': 2, 'mewmist|zz': 1, 'ghost|n': 3, 'sigmahalo|g': -1 }, news: { 'mewmist|n': 1, 'ghost|n': 1 }, equipped: 'ghost|n' });
+  assert.equal(s.pending, 99); assert.equal(s.granted, 4); assert.equal(s.bonus, 0); assert.deepEqual(s.owned, { 'mewmist|n': 2 }); assert.deepEqual(s.news, { 'mewmist|n': 1 }); assert.equal(s.equipped, null);
+  assert.deepEqual(AB.migrate({ found: ['rizzripple', 'nope'] }).owned, { 'rizzripple|n': 1 }, 'pre-v1 list of ids');
+  const fut = AB.migrate({ v: 3, futureThing: { a: 1 }, owned: { 'spaghettiverse|r': 1 }, equipped: 'spaghettiverse|r' });
+  assert.equal(fut.v, 3); assert.deepEqual(fut.futureThing, { a: 1 }); assert.equal(fut.equipped, 'spaghettiverse|r');
+  const cur = { base: 1, ups: [true, false, false, false], mut: 'g', item: 'lasagnavortex', seed: 5, taps: 2 };
+  assert.deepEqual(AB.migrate({ pending: 1, cur }).cur, cur, 'half-opened box resumes');
+  assert.equal(AB.migrate({ pending: 1, cur: { ...cur, item: 'mewmist' } }).cur, null, 'inconsistent box dropped');
+  assert.equal(AB.migrate({ pending: 0, cur }).cur, null);
+  const rt = AB.migrate(JSON.parse(JSON.stringify(s))); assert.deepEqual(rt, s, 'round-trips');
+});
+ok('aura box bonus ad uses the shared daily ad cap', () => { const l = {}, c = { dailyCap: 2 }; ads.gate(l, 'aurabox', c, T0); ads.record(l, 'aurabox'); ads.record(l, 'aurabox'); assert.equal(ads.gate(l, 'aurabox', c, T0).ok, false); });
 console.log(`\n${n} tests passed`);
