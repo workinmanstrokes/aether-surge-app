@@ -108,6 +108,38 @@ const calls = await p.evaluate(() => window.__calls.join(','));
 const want = ['init', 'gameLoadingFinished', 'gameplayStart', 'gameplayStop', 'rewardedBreak'];
 if (want.every(w => calls.includes(w)) && !calls.includes('commercialBreak') && calls.indexOf('gameLoadingFinished') < calls.indexOf('gameplayStart')) pass('poki events (no commercialBreak): ' + calls); else fail('poki events ' + calls);
 await p.close();
+
+// 6) Aura Box: free box per played run, tap-to-crack reveal, odds panel, index, ad bonus (simulated)
+p = await page('?adsim=1');
+await p.evaluate(() => localStorage.clear()); await p.reload(); await p.waitForTimeout(400);
+await p.click('text=TAP TO START'); await p.waitForTimeout(800);
+await p.evaluate(() => { squad.count = 0; gameOver(); }); await p.waitForTimeout(200);
+if (await p.$('#endBoxBtn')) fail('box for an unplayed run'); else pass('no aura box for a start->die run');
+await p.click('#nextBtn'); await p.waitForTimeout(600);
+await p.evaluate(() => { runKills = 20; squad.count = 0; gameOver(); }); await p.waitForTimeout(200);
+await p.evaluate(() => { reviveRun(); runKills = 25; squad.count = 0; gameOver(); }); await p.waitForTimeout(200);
+if (await p.evaluate(() => AuraBox.state().pending) === 1 && await p.$('#endBoxBtn')) pass('1 aura box per played run (revive adds none)'); else fail('box grant ' + await p.evaluate(() => AuraBox.state().pending));
+await p.click('#endBoxBtn'); await p.waitForTimeout(800);
+await p.click('#abxOdds'); const odds = await p.textContent('#abxOddsPanel');
+if (/FINAL CHANCE/.test(odds) && /MYTHIC/.test(odds) && /can't be bought/.test(odds)) pass('odds panel discloses drop rates'); else fail('odds panel');
+await p.click('#abxOddsClose');
+for (let i = 0; i < 5; i++) { await p.tap('#auraBox canvas'); await p.waitForTimeout(120); }
+await p.waitForTimeout(2300);
+const ab = await p.evaluate(() => ({ ph: AuraBox.phase(), st: AuraBox.state() }));
+if (ab.ph === 'reveal' && ab.st.opened === 1 && Object.keys(ab.st.owned).length === 1 && ab.st.pending === 0) pass('5 taps crack the box and add an aura'); else fail('box open ' + JSON.stringify(ab));
+if (await p.$('#abxBonus')) { await p.click('#abxBonus'); await p.waitForTimeout(2600); } else fail('no bonus box offer');
+const bonus = await p.evaluate(() => ({ pend: AuraBox.state().pending, ph: AuraBox.phase(), again: !!document.querySelector('#abxBonus'), led: save.ads.count }));
+if (bonus.pend === 1 && bonus.ph === 'idle' && bonus.led >= 1) pass('rewarded bonus box granted'); else fail('bonus ' + JSON.stringify(bonus));
+for (let i = 0; i < 5; i++) { await p.tap('#auraBox canvas'); await p.waitForTimeout(120); }
+await p.waitForTimeout(2300);
+if (await p.$('#abxBonus')) fail('bonus offered twice in one run'); else pass('bonus box capped at 1 per run');
+await p.click('#abxIndex'); await p.waitForTimeout(400);
+const tiles = await p.$$eval('.abx-tile', t => [t.length, t.filter(x => !x.classList.contains('lock')).length]);
+if (tiles[0] === 15 && tiles[1] >= 1) pass(`index: 15 tiles, ${tiles[1]} discovered`); else fail('index ' + tiles);
+await p.click('#abxIxClose'); await p.click('#abxDone');
+const pers = await p.evaluate(() => JSON.parse(localStorage.getItem('brainrot-aura-rush-aurabox')));
+if (pers.v === 1 && pers.opened === 2) pass('aura box state persisted (v1)'); else fail('persist ' + JSON.stringify(pers));
+await p.close();
 await b.close();
 if (errs.length) fail('page errors: ' + errs.join(' | ')); else pass('no page errors');
 process.exitCode = fails ? 1 : 0; console.log(fails ? `${fails} failed` : 'smoke passed');
